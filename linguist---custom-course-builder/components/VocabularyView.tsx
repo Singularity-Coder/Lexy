@@ -66,7 +66,8 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ dictionary = [], savedW
     );
   };
 
-  const LetterButton = ({ letter, type }: { letter: string; type: 'vowel' | 'consonant' }) => {
+  // Fix: Use React.FC to handle reserved props like 'key' when component is used in JSX mapping
+  const LetterButton: React.FC<{ letter: string; type: 'vowel' | 'consonant' }> = ({ letter, type }) => {
     const activeColors = type === 'vowel' 
       ? 'hover:border-[#ffc800] hover:bg-[#fff9e6] group-hover:text-[#ffc800]' 
       : 'hover:border-[#1cb0f6] hover:bg-[#ddf4ff] group-hover:text-[#1cb0f6]';

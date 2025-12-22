@@ -36,6 +36,7 @@ export interface DictionaryEntry {
   translation: string;
   definition?: string;
   example?: string;
+  isPhrase?: boolean;
 }
 
 export interface GrammarLesson {
@@ -45,6 +46,28 @@ export interface GrammarLesson {
   examples: string[];
 }
 
+export interface BookRecommendation {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  imageUrl: string;
+  buyUrl?: string;
+  level: string;
+}
+
+export interface CultureItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category: 'Famous people' | 'Art & Masterpieces' | 'Books' | 'Movies & TV series' | 'Music & Artists' | 'Folklore & Traditions' | 'Icons & Landmarks' | 'Religion & Beliefs' | 'Festivals';
+  description: string;
+  type: 'video' | 'audio' | 'link' | 'image';
+  mediaUrl?: string;
+  thumbnailUrl: string;
+  platform?: string;
+}
+
 export interface CourseData {
   id: string;
   courseTitle: string;
@@ -52,6 +75,8 @@ export interface CourseData {
   units: Unit[];
   dictionary?: DictionaryEntry[];
   grammar?: GrammarLesson[];
+  books?: BookRecommendation[];
+  cultureItems?: CultureItem[];
 }
 
 export interface Achievement {
@@ -62,6 +87,13 @@ export interface Achievement {
   requirement: number;
   currentValue: number;
   unlocked: boolean;
+}
+
+export interface NotificationSettings {
+  remindersEnabled: boolean;
+  reminderTime: string;
+  soundEnabled: boolean;
+  motivationalAlerts: boolean;
 }
 
 export interface UserStats {
@@ -76,4 +108,10 @@ export interface UserStats {
   failedExercises: Exercise[];
   savedWordIds: Record<string, string[]>; // Map of language -> array of word IDs
   currentCourseId: string;
+  notifications: NotificationSettings;
+  // New Stats
+  lessonsCompleted: number;
+  totalTimeMinutes: number;
+  accuracy: number; // percentage
+  perfectLessons: number;
 }

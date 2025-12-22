@@ -7,14 +7,20 @@ import LessonSession from './components/LessonSession';
 import ReviewMode from './components/ReviewMode';
 import VocabularyView from './components/VocabularyView';
 import GrammarView from './components/GrammarView';
+import GamesView from './components/GamesView';
 import WritingPad from './components/WritingPad';
 import CultureView from './components/CultureView';
 import SettingsView from './components/SettingsView';
-import { CourseData, Lesson, UserStats, Exercise, ProficiencyLevel } from './types';
+import SearchView from './components/SearchView';
+import NotificationsView from './components/NotificationsView';
+import ProfileView from './components/ProfileView';
+import MyListsView from './components/MyListsView';
+import { CourseData, Lesson, UserStats, Exercise, ProficiencyLevel, NotificationSettings } from './types';
 import { DUMMY_COURSE } from './constants';
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<'home' | 'settings' | 'profile' | 'vocabulary' | 'review' | 'writing' | 'culture' | 'grammar'>('home');
+  const [activeView, setActiveView] = useState<'home' | 'settings' | 'profile' | 'vocabulary' | 'review' | 'writing' | 'culture' | 'grammar' | 'games' | 'search' | 'notifications' | 'my-lists'>('home');
+  const [autoOpenLanguages, setAutoOpenLanguages] = useState(false);
   const [availableCourses, setAvailableCourses] = useState<CourseData[]>(() => {
     const saved = localStorage.getItem('linguist_courses_v2');
     return saved ? JSON.parse(saved) : [DUMMY_COURSE];
@@ -34,36 +40,51 @@ const App: React.FC = () => {
     failedExercises: [],
     savedWordIds: {},
     currentCourseId: DUMMY_COURSE.id,
+    notifications: {
+      remindersEnabled: true,
+      reminderTime: "09:00",
+      soundEnabled: true,
+      motivationalAlerts: true
+    },
     achievements: [
       { id: '1', title: 'Early Bird', description: 'Complete a lesson before 9AM', icon: '☀️', requirement: 1, currentValue: 0, unlocked: false },
       { id: '2', title: 'XP Titan', description: 'Reach 1000 Total XP', icon: '⚡', requirement: 1000, currentValue: 0, unlocked: false },
       { id: '3', title: 'Perfect Streak', description: 'Reach a 7-day streak', icon: '🔥', requirement: 7, currentValue: 0, unlocked: false },
-    ]
+    ],
+    lessonsCompleted: 0,
+    totalTimeMinutes: 0,
+    accuracy: 0,
+    perfectLessons: 0,
   };
 
   const [stats, setStats] = useState<UserStats>(() => {
-    const saved = localStorage.getItem('linguist_stats_v3');
-    return saved ? JSON.parse(saved) : INITIAL_STATS;
+    const saved = localStorage.getItem('linguist_stats_v4');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migration for new stats
+      if (parsed.lessonsCompleted === undefined) {
+        return { ...parsed, ...INITIAL_STATS, xp: parsed.xp, level: parsed.level };
+      }
+      return parsed;
+    }
+    return INITIAL_STATS;
   });
 
   useEffect(() => {
-    localStorage.setItem('linguist_stats_v3', JSON.stringify(stats));
+    localStorage.setItem('linguist_stats_v4', JSON.stringify(stats));
   }, [stats]);
 
   useEffect(() => {
     localStorage.setItem('linguist_courses_v2', JSON.stringify(availableCourses));
   }, [availableCourses]);
 
-  // Sync active course when stats.currentCourseId changes
   useEffect(() => {
     const active = availableCourses.find(c => c.id === stats.currentCourseId);
     if (active) setCourse(active);
   }, [stats.currentCourseId, availableCourses]);
 
   const handleCourseLoaded = (newCourse: CourseData, newMediaMap: Map<string, string>) => {
-    // Generate a unique ID if not present
     const courseWithId = { ...newCourse, id: newCourse.id || `course-${Date.now()}` };
-    
     setAvailableCourses(prev => {
       const exists = prev.findIndex(c => c.id === courseWithId.id);
       if (exists !== -1) {
@@ -73,7 +94,6 @@ const App: React.FC = () => {
       }
       return [...prev, courseWithId];
     });
-
     setStats(prev => ({ ...prev, currentCourseId: courseWithId.id }));
     setMediaMap(newMediaMap);
     setActiveView('home');
@@ -82,6 +102,15 @@ const App: React.FC = () => {
   const handleCourseSwitch = (courseId: string) => {
     setStats(prev => ({ ...prev, currentCourseId: courseId }));
     setActiveView('home');
+  };
+
+  const handleSidebarNav = (view: any) => {
+    if (view === 'settings') {
+      setAutoOpenLanguages(true);
+    } else {
+      setAutoOpenLanguages(false);
+    }
+    setActiveView(view);
   };
 
   const handleStartLesson = (lesson: Lesson) => {
@@ -111,10 +140,16 @@ const App: React.FC = () => {
     });
   };
 
+  const handleUpdateNotifications = (settings: NotificationSettings) => {
+    setStats(prev => ({ ...prev, notifications: settings }));
+  };
+
   const handleResetProgress = () => {
-    setStats(INITIAL_STATS);
-    setAvailableCourses([DUMMY_COURSE]);
-    setActiveView('home');
+    if(confirm("Reset everything?")) {
+      setStats(INITIAL_STATS);
+      setAvailableCourses([DUMMY_COURSE]);
+      setActiveView('home');
+    }
   };
 
   const handleFinishLesson = (xpGained: number, mistakes: Exercise[]) => {
@@ -139,16 +174,27 @@ const App: React.FC = () => {
     setStats(prev => {
       const newXp = prev.xp + xpGained;
       const newLevel = Math.floor(newXp / 1000) + 1;
+      const newLessonsCompleted = prev.lessonsCompleted + 1;
+      const totalExercises = (activeLesson?.exercises.length || 0);
+      const sessionAccuracy = totalExercises > 0 ? ((totalExercises - mistakes.length) / totalExercises) * 100 : 100;
+      const newAccuracy = prev.accuracy === 0 ? sessionAccuracy : (prev.accuracy + sessionAccuracy) / 2;
+      const isPerfect = mistakes.length === 0;
+
       const updatedAchievements = prev.achievements.map(a => {
         if (a.id === '2') return { ...a, currentValue: newXp, unlocked: newXp >= a.requirement };
         return a;
       });
+
       return { 
         ...prev, 
         xp: newXp, 
         level: newLevel, 
         failedExercises: [...prev.failedExercises, ...mistakes].slice(-20),
-        achievements: updatedAchievements
+        achievements: updatedAchievements,
+        lessonsCompleted: newLessonsCompleted,
+        totalTimeMinutes: prev.totalTimeMinutes + 15, // Mock time
+        accuracy: Math.round(newAccuracy),
+        perfectLessons: isPerfect ? prev.perfectLessons + 1 : prev.perfectLessons
       };
     });
 
@@ -160,9 +206,11 @@ const App: React.FC = () => {
   return (
     <div className="flex bg-white min-h-screen font-['Nunito'] select-none">
       <Sidebar 
-        onNavClick={setActiveView as any} 
+        onNavClick={handleSidebarNav} 
         activeView={activeView} 
-        xp={stats.xp} 
+        xp={stats.xp}
+        streak={stats.streak}
+        hearts={stats.hearts}
         proficiencyLevel={stats.proficiencyLevel}
         currentLanguage={course.language}
       />
@@ -203,8 +251,14 @@ const App: React.FC = () => {
           />
         )}
         {activeView === 'grammar' && <GrammarView lessons={course.grammar} />}
+        {activeView === 'games' && <GamesView dictionary={course.dictionary} />}
         {activeView === 'writing' && <WritingPad />}
-        {activeView === 'culture' && <CultureView />}
+        {activeView === 'culture' && <CultureView books={course.books} cultureItems={course.cultureItems} />}
+        {activeView === 'search' && <SearchView course={course} onToggleSaveWord={handleToggleSaveWord} savedWordIds={stats.savedWordIds[course.language] || []} />}
+        {activeView === 'notifications' && <NotificationsView settings={stats.notifications} onUpdate={handleUpdateNotifications} />}
+        {activeView === 'my-lists' && <MyListsView dictionary={course.dictionary} savedWordIds={stats.savedWordIds[course.language] || []} onToggleSaveWord={handleToggleSaveWord} />}
+        {activeView === 'profile' && <ProfileView stats={stats} />}
+        
         {activeView === 'settings' && (
           <SettingsView 
             availableCourses={availableCourses}
@@ -214,29 +268,10 @@ const App: React.FC = () => {
             currentProficiency={stats.proficiencyLevel}
             onUpdateProficiency={handleUpdateProficiency}
             currentCourseId={stats.currentCourseId}
+            autoOpenLanguages={autoOpenLanguages}
           />
         )}
         {activeView === 'review' && <ReviewMode exercises={stats.failedExercises} onClose={() => setActiveView('home')} />}
-
-        {activeView === 'profile' && (
-          <div className="max-w-3xl mx-auto mt-12 p-8 space-y-10">
-            <div className="flex items-center space-x-8">
-              <div className="w-40 h-40 bg-gray-100 rounded-full flex items-center justify-center text-7xl border-4 border-gray-50">🦉</div>
-              <div className="flex-1">
-                <h2 className="text-4xl font-black">Learner Lvl {stats.level}</h2>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[{v: stats.streak, l: 'STREAK', i: '🔥'}, {v: stats.xp, l: 'TOTAL XP', i: '⚡'}, {v: stats.level, l: 'LEVEL', i: '🏆'}, {v: stats.gems, l: 'GEMS', i: '💎'}].map((s, i) => (
-                <div key={i} className="duo-card p-6 flex flex-col items-center">
-                  <span className="text-3xl mb-1">{s.i}</span>
-                  <span className="text-2xl font-black">{s.v}</span>
-                  <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest">{s.l}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {activeLesson && <LessonSession lesson={activeLesson} mediaMap={mediaMap} onFinish={handleFinishLesson} onQuit={() => setActiveLesson(null)} />}
       </main>

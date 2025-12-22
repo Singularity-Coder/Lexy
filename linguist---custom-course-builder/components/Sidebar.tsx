@@ -4,20 +4,26 @@ import { PROFICIENCY_LEVELS } from '../constants';
 import { ProficiencyLevel } from '../types';
 
 interface SidebarProps {
-  onNavClick: (view: 'home' | 'settings' | 'profile' | 'vocabulary' | 'writing' | 'culture' | 'grammar') => void;
+  onNavClick: (view: 'home' | 'settings' | 'profile' | 'vocabulary' | 'writing' | 'culture' | 'grammar' | 'games' | 'search' | 'notifications' | 'my-lists') => void;
   activeView: string;
   xp: number;
+  streak: number;
+  hearts: number;
   proficiencyLevel: ProficiencyLevel;
   currentLanguage: string;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavClick, activeView, xp, proficiencyLevel, currentLanguage }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onNavClick, activeView, xp, streak, hearts, proficiencyLevel, currentLanguage }) => {
   const navItems = [
     { id: 'home', label: 'LEARN', icon: '🏠' },
+    { id: 'search', label: 'SEARCH', icon: '🔍' },
     { id: 'vocabulary', label: 'VOCABULARY', icon: '📖' },
+    { id: 'my-lists', label: 'MY LISTS', icon: '📂' },
     { id: 'grammar', label: 'GRAMMAR', icon: '📝' },
+    { id: 'games', label: 'GAMES', icon: '🎮' },
     { id: 'writing', label: 'WRITING', icon: '✏️' },
     { id: 'culture', label: 'CULTURE', icon: '🌍' },
+    { id: 'notifications', label: 'REMINDERS', icon: '🔔' },
     { id: 'profile', label: 'PROFILE', icon: '👤' },
     { id: 'settings', label: 'SETTINGS', icon: '⚙️' },
   ];
@@ -31,29 +37,44 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavClick, activeView, xp, proficien
         LINGUIST
       </div>
 
-      <div className="mb-8 space-y-2">
-        {/* Language Card */}
+      <div className="mb-6 space-y-4">
+        {/* Merged Language & Stage Card */}
         <div 
           onClick={() => onNavClick('settings')}
-          className="p-3 bg-blue-50 rounded-2xl border-2 border-blue-100 shadow-sm flex items-center space-x-3 cursor-pointer hover:bg-blue-100 transition-all group"
+          className="p-3 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-sm flex items-center space-x-3 cursor-pointer hover:bg-gray-100 transition-all group"
         >
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
-            🌐
+          <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
+            <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
           </div>
-          <div className="overflow-hidden">
-            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">Learning</p>
-            <p className="font-black text-blue-700 text-xs truncate uppercase tracking-tight">{currentLanguage}</p>
+          <div className="overflow-hidden flex-1">
+            <div className="flex items-center space-x-1">
+               <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest leading-none">Learning</span>
+               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none truncate"> {currentLanguage}</span>
+            </div>
+            <p className="font-black text-gray-700 text-sm truncate mt-0.5">{currentLevelInfo.name}</p>
           </div>
         </div>
 
-        {/* Level Badge Under Language */}
-        <div className="p-3 bg-gray-50 rounded-2xl flex items-center space-x-3 border-2 border-gray-100 shadow-sm transition-all hover:bg-gray-100 cursor-pointer group" onClick={() => onNavClick('settings')}>
-          <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-            <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
+        {/* Stats Section: Streak and Hearts */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center space-x-2 p-2 rounded-xl bg-orange-50 border border-orange-100 font-black text-orange-500">
+            <span>🔥</span>
+            <span className="text-xs">{streak}</span>
           </div>
-          <div className="overflow-hidden">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Stage</p>
-            <p className="font-black text-gray-700 text-xs truncate">{currentLevelInfo.name}</p>
+          <div className="flex items-center space-x-2 p-2 rounded-xl bg-red-50 border border-red-100 font-black text-red-500">
+            <span>❤️</span>
+            <span className="text-xs">{hearts}</span>
+          </div>
+        </div>
+
+        {/* Daily Goal Progress */}
+        <div className="p-3 duo-card bg-gray-50/50 border-gray-100 space-y-2">
+          <div className="flex justify-between items-center">
+            <h3 className="font-black text-[9px] text-gray-400 uppercase tracking-widest">Daily Goal</h3>
+            <span className="text-[9px] font-black text-gray-500">{goalProgress}%</span>
+          </div>
+          <div className="progress-bar !h-2">
+             <div className="progress-fill" style={{ width: `${goalProgress}%` }} />
           </div>
         </div>
       </div>
@@ -73,32 +94,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavClick, activeView, xp, proficien
             <span className="tracking-widest text-[10px] uppercase">{item.label}</span>
           </button>
         ))}
-
-        <div className="mt-6 p-4 duo-card bg-gray-50/50 border-gray-100 space-y-3">
-          <div className="flex justify-between items-center">
-            <h3 className="font-black text-[10px] text-gray-400 uppercase tracking-widest">Daily Goal</h3>
-          </div>
-          <div className="progress-bar !h-2">
-             <div className="progress-fill" style={{ width: `${goalProgress}%` }} />
-          </div>
-          <p className="text-[11px] font-black text-gray-500">{goalProgress} / 100 XP</p>
-        </div>
       </nav>
 
-      <div className="mt-auto pt-4 border-t-2 border-gray-100 space-y-3">
-        <div className="flex items-center justify-between text-orange-500 font-black">
+      <div className="mt-auto pt-4 border-t-2 border-gray-100">
+        <div className="flex items-center justify-between text-yellow-600 font-black">
           <div className="flex items-center space-x-2">
-            <span>🔥</span>
-            <span className="text-[10px]">STREAK</span>
+            <span>⚡</span>
+            <span className="text-[10px]">TOTAL XP</span>
           </div>
-          <span className="text-xs">5</span>
-        </div>
-        <div className="flex items-center justify-between text-red-500 font-black">
-           <div className="flex items-center space-x-2">
-            <span>❤️</span>
-            <span className="text-[10px]">HEARTS</span>
-          </div>
-          <span className="text-xs">∞</span>
+          <span className="text-xs">{xp}</span>
         </div>
       </div>
     </div>

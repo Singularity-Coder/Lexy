@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import UploadManager from './UploadManager';
 import { CourseData, ProficiencyLevel } from '../types';
 import { PROFICIENCY_LEVELS } from '../constants';
@@ -12,6 +12,7 @@ interface SettingsViewProps {
   currentProficiency: ProficiencyLevel;
   onUpdateProficiency: (level: ProficiencyLevel) => void;
   currentCourseId: string;
+  autoOpenLanguages?: boolean;
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ 
@@ -21,8 +22,41 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   onResetProgress, 
   currentProficiency, 
   onUpdateProficiency,
-  currentCourseId
+  currentCourseId,
+  autoOpenLanguages = false
 }) => {
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(autoOpenLanguages);
+
+  const LanguageSelector = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {availableCourses.map((course) => (
+        <button
+          key={course.id}
+          onClick={() => {
+            onCourseSwitch(course.id);
+            setIsLanguageModalOpen(false);
+          }}
+          className={`p-5 rounded-2xl flex items-center space-x-4 border-2 transition-all group ${
+            currentCourseId === course.id 
+              ? 'bg-blue-50 border-[#1cb0f6] shadow-[0_4px_0_#1cb0f6]' 
+              : 'bg-white border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
+          }`}
+        >
+          <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-sm">
+            🌐
+          </div>
+          <div className="text-left">
+            <p className="font-black text-gray-800">{course.language}</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase">{course.courseTitle}</p>
+          </div>
+          {currentCourseId === course.id && (
+            <div className="ml-auto text-[#1cb0f6] font-black">✓</div>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="max-w-4xl mx-auto py-12 px-6 space-y-12 animate-in fade-in slide-in-from-bottom duration-500 pb-32">
       <div className="space-y-2">
@@ -36,30 +70,43 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">My Languages</h2>
           <div className="h-1 flex-1 bg-gray-100 rounded-full"></div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {availableCourses.map((course) => (
-            <button
-              key={course.id}
-              onClick={() => onCourseSwitch(course.id)}
-              className={`p-5 rounded-2xl flex items-center space-x-4 border-2 transition-all group ${
-                currentCourseId === course.id 
-                  ? 'bg-blue-50 border-[#1cb0f6] shadow-[0_4px_0_#1cb0f6]' 
-                  : 'bg-white border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
-              }`}
-            >
-              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                🌐
-              </div>
-              <div className="text-left">
-                <p className="font-black text-gray-800">{course.language}</p>
-                <p className="text-[10px] font-black text-gray-400 uppercase">{course.courseTitle}</p>
-              </div>
-              {currentCourseId === course.id && (
-                <div className="ml-auto text-[#1cb0f6] font-black">✓</div>
-              )}
-            </button>
-          ))}
+        
+        <div className="duo-card p-6 bg-blue-50/30 border-blue-100 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center space-x-6">
+            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-4xl shadow-sm">🌐</div>
+            <div>
+              <p className="text-xs font-black text-blue-400 uppercase tracking-widest">Active Language</p>
+              <h3 className="text-2xl font-black text-blue-700">{availableCourses.find(c => c.id === currentCourseId)?.language || 'None'}</h3>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsLanguageModalOpen(true)}
+            className="w-full md:w-auto p-4 px-8 rounded-xl font-black bg-white text-[#1cb0f6] border-2 border-[#1cb0f6] hover:bg-blue-50 transition-all shadow-[0_4px_0_#1cb0f6] active:translate-y-1 active:shadow-none"
+          >
+            SWITCH LANGUAGE
+          </button>
         </div>
+
+        {/* Modal Popup */}
+        {isLanguageModalOpen && (
+          <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full space-y-8 shadow-2xl animate-in zoom-in duration-300">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black text-gray-800">Select Language</h2>
+                <button onClick={() => setIsLanguageModalOpen(false)} className="text-2xl text-gray-400 hover:text-gray-600 font-bold">✕</button>
+              </div>
+              <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <LanguageSelector />
+              </div>
+              <button 
+                onClick={() => setIsLanguageModalOpen(false)}
+                className="w-full p-4 rounded-2xl font-black text-white bg-[#1cb0f6] border-b-4 border-[#1899d6] active:translate-y-1 active:border-b-0 transition-all uppercase tracking-widest"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Proficiency Stage Selection */}
