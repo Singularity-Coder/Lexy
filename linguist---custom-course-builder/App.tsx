@@ -22,6 +22,7 @@ import { DUMMY_COURSE, PROFICIENCY_LEVELS } from './constants';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('home');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
   const [availableCourses, setAvailableCourses] = useState<CourseData[]>(() => {
     const saved = localStorage.getItem('linguist_courses_v2');
     return saved ? JSON.parse(saved) : [DUMMY_COURSE];
@@ -62,7 +63,6 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('linguist_stats_v4');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Migration for new stats
       if (parsed.lessonsCompleted === undefined) {
         return { ...parsed, ...INITIAL_STATS, xp: parsed.xp, level: parsed.level };
       }
@@ -202,6 +202,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex bg-white min-h-screen font-['Nunito'] select-none">
+      {/* Sidebar - Fixed w-72 on Desktop, Slide-in on Mobile */}
       <Sidebar 
         onNavClick={handleSidebarNav} 
         activeView={activeView} 
@@ -210,13 +211,34 @@ const App: React.FC = () => {
         hearts={stats.hearts}
         proficiencyLevel={stats.proficiencyLevel}
         currentLanguage={course.language}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       />
 
-      <main className="flex-1 md:ml-64 relative">
+      {/* Main Content Area - Fixed Left Padding of 72 on Desktop to accommodate fixed sidebar */}
+      <main className="flex-1 relative transition-all duration-300 md:pl-72">
+        {/* Mobile Header bar - Visible only on small screens */}
         <div className="md:hidden p-4 border-b-2 border-gray-100 flex items-center justify-between sticky top-0 bg-white z-40">
-           <span className="text-2xl font-extrabold text-[#58cc02] tracking-tighter italic">LINGUIST</span>
+           <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <span className="text-xl">☰</span>
+              </button>
+              <span className="text-2xl font-black text-[#58cc02] tracking-tighter italic">LINGUIST</span>
+           </div>
+           <div className="flex gap-2">
+             <div className="flex items-center gap-1 p-2 px-3 bg-orange-50 text-orange-500 rounded-xl font-black text-xs border border-orange-100">
+               <span>🔥</span> {stats.streak}
+             </div>
+             <div className="flex items-center gap-1 p-2 px-3 bg-red-50 text-red-500 rounded-xl font-black text-xs border border-red-100">
+               <span>❤️</span> {stats.hearts}
+             </div>
+           </div>
         </div>
 
+        {/* View Routing */}
         {activeView === 'home' && (
           <div className="pb-24 max-w-4xl mx-auto px-4">
              <div className="mt-12 mb-8 px-4 text-left">

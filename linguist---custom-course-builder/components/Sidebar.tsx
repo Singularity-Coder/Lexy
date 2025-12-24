@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PROFICIENCY_LEVELS } from '../constants';
+import { PROFICIENCY_LEVELS, SIDEBAR_NAV_ITEMS as navItems } from '../constants';
 import { ProficiencyLevel } from '../types';
 
 interface SidebarProps {
@@ -11,101 +11,141 @@ interface SidebarProps {
   hearts: number;
   proficiencyLevel: ProficiencyLevel;
   currentLanguage: string;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onNavClick, activeView, xp, streak, hearts, proficiencyLevel, currentLanguage }) => {
-  const navItems = [
-    { id: 'home', label: 'Learn', icon: '🏠' },
-    { id: 'search', label: 'Search', icon: '🔍' },
-    { id: 'vocabulary', label: 'Vocabulary', icon: '📖' },
-    { id: 'my-lists', label: 'My Lists', icon: '📂' },
-    { id: 'ai-chats', label: 'Ai Chats', icon: '💬' },
-    { id: 'grammar', label: 'Grammar', icon: '📝' },
-    { id: 'games', label: 'Games', icon: '🎮' },
-    { id: 'writing', label: 'Writing', icon: '✏️' },
-    { id: 'culture', label: 'Culture', icon: '🌍' },
-    { id: 'notifications', label: 'Reminders', icon: '🔔' },
-    { id: 'profile', label: 'Profile', icon: '👤' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
-  ];
-
+const Sidebar: React.FC<SidebarProps> = ({ 
+  onNavClick, 
+  activeView, 
+  xp, 
+  streak, 
+  hearts, 
+  proficiencyLevel, 
+  currentLanguage,
+  isOpen,
+  onToggle
+}) => {
   const goalProgress = xp % 100;
   const currentLevelInfo = PROFICIENCY_LEVELS.find(l => l.level === proficiencyLevel) || PROFICIENCY_LEVELS[0];
 
   return (
-    <div className="w-64 border-r-2 border-gray-100 h-screen fixed left-0 top-0 p-6 flex flex-col hidden md:flex z-50 bg-white">
-      <div className="text-3xl font-extrabold text-[#58cc02] mb-1 tracking-tighter italic">
-        LINGUIST
-      </div>
-
-      <div className="mb-6 space-y-4">
-        {/* Merged Language & Stage Card */}
+    <>
+      {/* Mobile Overlay - Only visible when open on mobile */}
+      {isOpen && (
         <div 
-          onClick={() => onNavClick('settings')}
-          className="p-3 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-sm flex items-center space-x-3 cursor-pointer hover:bg-gray-100 transition-all group"
-        >
-          <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-            <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
-          </div>
-          <div className="overflow-hidden flex-1">
-            <div className="flex items-center space-x-1">
-               <span className="text-[10px] font-black text-[#1cb0f6] uppercase tracking-widest leading-none truncate">{currentLanguage}</span>
-            </div>
-            <p className="font-black text-gray-700 text-sm truncate mt-0.5">{currentLevelInfo.name}</p>
-          </div>
-        </div>
+          className="fixed inset-0 bg-black/40 z-[60] md:hidden transition-opacity"
+          onClick={onToggle}
+        />
+      )}
 
-        {/* Daily Goal Progress */}
-        <div className="p-3 duo-card bg-gray-50/50 border-gray-100 space-y-2">
-          <div className="flex justify-between items-center">
-            <h3 className="font-black text-[9px] text-gray-400 uppercase tracking-widest">Daily Goal</h3>
-            <span className="text-[9px] font-black text-gray-500">{goalProgress}%</span>
+      {/* Sidebar Container - Always visible on desktop (w-72), slide-in on mobile */}
+      <div 
+        className={`fixed top-0 left-0 h-screen bg-white border-r-2 border-gray-100 z-[70] transition-transform duration-300 ease-in-out transform flex flex-col w-72 md:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Header Area */}
+        <div className="flex items-center justify-between p-6 pb-2">
+          <div className="text-3xl font-black text-[#58cc02] tracking-tighter italic select-none">
+            LINGUIST
           </div>
-          <div className="progress-bar !h-2">
-             <div className="progress-fill" style={{ width: `${goalProgress}%` }} />
-          </div>
-        </div>
-
-        {/* Stats Section: Streak and Hearts */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center space-x-2 p-2 rounded-xl bg-orange-50 border border-orange-100 font-black text-orange-500">
-            <span>🔥</span>
-            <span className="text-xs">{streak}</span>
-          </div>
-          <div className="flex items-center space-x-2 p-2 rounded-xl bg-red-50 border border-red-100 font-black text-red-500">
-            <span>❤️</span>
-            <span className="text-xs">{hearts}</span>
-          </div>
-        </div>
-      </div>
-      
-      <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-1">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onNavClick(item.id as any)}
-            className={`w-full flex items-center space-x-3 p-3 rounded-xl font-black transition-all transform active:scale-95 ${
-              activeView === item.id 
-                ? 'bg-[#ddf4ff] text-[#1cb0f6] border-2 border-[#84d8ff]' 
-                : 'text-gray-500 hover:bg-gray-100'
-            }`}
+          {/* Mobile-only close button */}
+          <button 
+            onClick={onToggle}
+            className="md:hidden p-2 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors"
           >
-            <span className="text-xl">{item.icon}</span>
-            <span className="tracking-widest text-[10px] uppercase">{item.label}</span>
+            ✕
           </button>
-        ))}
-      </nav>
+        </div>
 
-      <div className="mt-auto pt-4 border-t-2 border-gray-100">
-        <div className="flex items-center justify-between text-yellow-600 font-black">
-          <div className="flex items-center space-x-2">
-            <span>⚡</span>
-            <span className="text-[10px]">TOTAL XP</span>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-4 pb-10 space-y-8">
+          <div className="space-y-5">
+            {/* Language & Stage Card */}
+            <div 
+              onClick={() => {
+                onNavClick('settings');
+                if (window.innerWidth < 768) onToggle();
+              }}
+              className="p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-sm flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-all group"
+            >
+              <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
+                <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
+              </div>
+              <div className="overflow-hidden flex-1">
+                <div className="flex items-center space-x-1">
+                   <span className="text-[11px] font-black text-[#1cb0f6] uppercase tracking-[0.15em] leading-none truncate">{currentLanguage}</span>
+                </div>
+                <p className="font-black text-gray-700 text-base truncate mt-0.5">{currentLevelInfo.name}</p>
+              </div>
+            </div>
+
+            {/* Stats Section */}
+            <div className="space-y-3">
+              {/* Daily Goal Pill - Styled like the other stats */}
+              <div className="flex flex-col space-y-2.5 p-3 px-4 rounded-2xl bg-blue-50 border border-blue-100 font-black text-blue-600 shadow-sm">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xl">🎯</span>
+                    <span className="text-[11px] font-black uppercase tracking-[0.1em]">Daily Goal</span>
+                  </div>
+                  <span className="text-xs font-black">{goalProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-blue-100/50 rounded-full overflow-hidden">
+                   <div 
+                    className="h-full bg-blue-500 rounded-full transition-all duration-500" 
+                    style={{ width: `${goalProgress}%` }} 
+                   />
+                </div>
+              </div>
+
+              {/* Grid for Streak and Hearts */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-center space-x-2 p-3 rounded-2xl bg-orange-50 border border-orange-100 font-black text-orange-500 shadow-sm">
+                  <span className="text-xl">🔥</span>
+                  <span className="text-sm">{streak}</span>
+                </div>
+                <div className="flex items-center justify-center space-x-2 p-3 rounded-2xl bg-red-50 border border-red-100 font-black text-red-500 shadow-sm">
+                  <span className="text-xl">❤️</span>
+                  <span className="text-sm">{hearts}</span>
+                </div>
+              </div>
+
+              {/* Total XP Pill */}
+              <div className="flex items-center space-x-3 p-3 px-4 rounded-2xl bg-yellow-50 border border-yellow-100 font-black text-yellow-600 shadow-sm">
+                <span className="text-xl">⚡</span>
+                <div className="flex justify-between items-center flex-1">
+                  <span className="text-[11px] font-black uppercase tracking-[0.1em]">Total XP</span>
+                  <span className="text-sm">{xp}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <span className="text-xs">{xp}</span>
+          
+          {/* Navigation Items */}
+          <nav className="space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  onNavClick(item.id as any);
+                  if (window.innerWidth < 768) onToggle();
+                }}
+                className={`w-full flex items-center p-3.5 px-4 rounded-2xl font-bold transition-all transform active:scale-95 space-x-4 border-2 ${
+                  activeView === item.id 
+                    ? 'bg-[#ddf4ff] text-[#1cb0f6] border-[#84d8ff]' 
+                    : 'text-gray-500 border-transparent hover:bg-gray-100'
+                }`}
+              >
+                <span className="text-2xl">{item.icon}</span>
+                <span className="tracking-tight text-base font-black uppercase tracking-wider">{item.label}</span>
+              </button>
+            ))}
+          </nav>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

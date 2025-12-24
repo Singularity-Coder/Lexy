@@ -2,53 +2,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { AICharacter, ChatMessage } from '../types';
+import { MYTHICAL_CHARACTERS } from '../constants'
 
 interface AIChatsViewProps {
   currentLanguage: string;
 }
-
-const MYTHICAL_CHARACTERS: AICharacter[] = [
-  {
-    id: 'zeus',
-    name: 'Zeus',
-    avatar: 'https://cdn-icons-png.flaticon.com/512/3253/3253215.png',
-    role: 'King of Gods',
-    description: 'The thunderbolt-wielding ruler of Mount Olympus.',
-    personality: 'Majestic, authoritative, occasionally dramatic, but wise.'
-  },
-  {
-    id: 'athena',
-    name: 'Athena',
-    avatar: 'https://cdn-icons-png.flaticon.com/512/3253/3253216.png',
-    role: 'Goddess of Wisdom',
-    description: 'Strategist and protector of civilization.',
-    personality: 'Logical, insightful, encouraging of learners.'
-  },
-  {
-    id: 'odin',
-    name: 'Odin',
-    avatar: 'https://cdn-icons-png.flaticon.com/512/3253/3253217.png',
-    role: 'All-Father',
-    description: 'Seeker of knowledge and master of runes.',
-    personality: 'Mysterious, deeply philosophical, value-driven.'
-  },
-  {
-    id: 'cleopatra',
-    name: 'Cleopatra',
-    avatar: 'https://cdn-icons-png.flaticon.com/512/3253/3253218.png',
-    role: 'Pharaoh',
-    description: 'The last active ruler of the Ptolemaic Kingdom of Egypt.',
-    personality: 'Charismatic, brilliant linguist, politically astute.'
-  },
-  {
-    id: 'da_vinci',
-    name: 'Leonardo da Vinci',
-    avatar: 'https://cdn-icons-png.flaticon.com/512/3253/3253219.png',
-    role: 'Renaissance Master',
-    description: 'Polymath, painter, inventor, and anatomist.',
-    personality: 'Curious, imaginative, constantly sketching ideas.'
-  }
-];
 
 const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
   const [selectedCharacter, setSelectedCharacter] = useState<AICharacter>(MYTHICAL_CHARACTERS[0]);
