@@ -43,6 +43,7 @@ const App: React.FC = () => {
     savedWordIds: {},
     currentCourseId: DUMMY_COURSE.id,
     selectedMascotId: 'girl',
+    brandFont: 'Pacifico, cursive',
     notifications: {
       remindersEnabled: true,
       reminderTime: "09:00",
@@ -64,10 +65,10 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('lexi_stats_v1');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Data migration for mascot
-      if (parsed.selectedMascotId === undefined) {
-        parsed.selectedMascotId = 'girl';
-      }
+      // Data migrations
+      if (parsed.selectedMascotId === undefined) parsed.selectedMascotId = 'girl';
+      if (parsed.brandFont === undefined) parsed.brandFont = 'Pacifico, cursive';
+      
       if (parsed.lessonsCompleted === undefined) {
         return { ...parsed, ...INITIAL_STATS, xp: parsed.xp, level: parsed.level };
       }
@@ -125,6 +126,10 @@ const App: React.FC = () => {
 
   const handleUpdateMascot = (mascotId: string) => {
     setStats(prev => ({ ...prev, selectedMascotId: mascotId }));
+  };
+
+  const handleUpdateBrandFont = (font: string) => {
+    setStats(prev => ({ ...prev, brandFont: font }));
   };
 
   const handleToggleSaveWord = (wordId: string) => {
@@ -222,6 +227,7 @@ const App: React.FC = () => {
         currentLanguage={course.language}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        brandFont={stats.brandFont}
       />
 
       {/* Main Content Area - Fixed Left Padding of 72 on Desktop to accommodate fixed sidebar */}
@@ -235,7 +241,12 @@ const App: React.FC = () => {
               >
                 <span className="text-xl">☰</span>
               </button>
-              <span className="text-2xl font-black text-purple-600 uppercase">LEXY</span>
+              <span 
+                className="text-2xl text-purple-600"
+                style={{ fontFamily: stats.brandFont }}
+              >
+                Lexy
+              </span>
            </div>
            <div className="flex gap-2">
              <div className="flex items-center gap-1 p-2 px-3 bg-orange-50 text-orange-500 rounded-xl font-black text-xs border border-orange-100">
@@ -303,6 +314,8 @@ const App: React.FC = () => {
             currentCourseId={stats.currentCourseId}
             selectedMascotId={stats.selectedMascotId}
             onUpdateMascot={handleUpdateMascot}
+            brandFont={stats.brandFont}
+            onUpdateBrandFont={handleUpdateBrandFont}
             onCreateCourse={() => setActiveView('course-builder')}
             notificationSettings={stats.notifications}
             onUpdateNotifications={handleUpdateNotifications}

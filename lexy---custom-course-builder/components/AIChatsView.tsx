@@ -95,7 +95,7 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
           </div>
 
           {/* 2x2 Grid Area */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+          <div className="flex-1 overflow-y-auto scrollbar-hide p-6">
             <div className="grid grid-cols-2 gap-4">
               {MYTHICAL_CHARACTERS.map(char => {
                 const isActive = selectedCharacter.id === char.id;
@@ -106,8 +106,8 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
                     onClick={() => handleCharacterSelect(char)}
                     className={`flex flex-col items-stretch text-center rounded-3xl transition-all border-2 overflow-hidden group ${
                       isActive 
-                        ? 'bg-[#f3e8ff] border-[#ad46ff] shadow-[0_4px_0_#ad46ff] -translate-y-1' 
-                        : 'bg-white border-gray-100 hover:border-gray-300 shadow-sm'
+                        ? 'bg-purple-100 border-purple-200 text-purple-700 shadow-[0_4px_0_#c4b5fd]' 
+                        : 'bg-white border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
                     }`}
                   >
                     {/* End-to-End Image Section */}
@@ -121,10 +121,10 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
                     
                     {/* Text Section Below Image */}
                     <div className="p-4 flex flex-col items-center">
-                      <h3 className={`font-black text-sm truncate w-full ${isActive ? 'text-[#ad46ff]' : 'text-gray-800'}`}>
+                      <h3 className={`font-black text-sm truncate w-full ${isActive ? 'text-purple-700' : 'text-gray-800'}`}>
                         {char.name}
                       </h3>
-                      <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1 truncate w-full">
+                      <p className={`text-[10px] font-black uppercase tracking-widest mt-1 truncate w-full ${isActive ? 'text-purple-500' : 'text-gray-300'}`}>
                         {char.role}
                       </p>
                     </div>
@@ -167,7 +167,7 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
           {/* Messages Window Area */}
           <div 
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 custom-scrollbar bg-gray-50/10"
+            className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 scrollbar-hide bg-gray-50/10"
           >
             {/* Centered Character Context Box */}
             <div className="flex justify-center mb-12">

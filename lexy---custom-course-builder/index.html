@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lexy</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Pacifico&family=Great+Vibes&family=Lobster&family=Dancing+Script:wght@700&family=Satisfy&family=Caveat:wght@700&family=Playfair+Display:wght@900&family=Abril+Fatface&family=Yellowtail&family=Oleo+Script:wght@700&family=Marcellus&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #ad46ff;
@@ -85,6 +85,31 @@
             transform: rotateY(180deg);
             background-color: #ad46ff;
             color: white;
+        }
+
+        /* Custom Scrollbar for better UX */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e5e5e5;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #ad46ff;
+        }
+
+        /* Scrollbar Hide Utility */
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
         }
     </style>
 <script type="importmap">

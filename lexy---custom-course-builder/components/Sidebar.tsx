@@ -13,6 +13,7 @@ interface SidebarProps {
   currentLanguage: string;
   isOpen: boolean;
   onToggle: () => void;
+  brandFont: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -24,7 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   proficiencyLevel, 
   currentLanguage,
   isOpen,
-  onToggle
+  onToggle,
+  brandFont
 }) => {
   const goalProgress = xp % 100;
   const currentLevelInfo = PROFICIENCY_LEVELS.find(l => l.level === proficiencyLevel) || PROFICIENCY_LEVELS[0];
@@ -47,8 +49,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* Header Area */}
         <div className="flex items-center justify-between p-6 pb-2">
-          <div className="text-4xl font-black text-[#ad46ff] select-none uppercase">
-            LEXY
+          <div 
+            className="text-4xl text-[#ad46ff] select-none"
+            style={{ fontFamily: brandFont }}
+          >
+            Lexy
           </div>
           {/* Mobile-only close button */}
           <button 
@@ -60,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pt-4 pb-10 space-y-8">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-6 pt-4 pb-10 space-y-8">
           <div className="space-y-5">
             {/* Language & Stage Card */}
             <div 
@@ -68,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onNavClick('settings');
                 if (window.innerWidth < 768) onToggle();
               }}
-              className="p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 shadow-sm flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-all group"
+              className="p-4 bg-white rounded-2xl border-2 border-gray-100 shadow-sm flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-all group"
             >
               <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 border-white shadow-sm transition-transform group-hover:scale-105">
                 <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
@@ -82,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Unified Stats Box */}
-            <div className="duo-card overflow-hidden border-gray-100 bg-white shadow-sm">
+            <div className="duo-card overflow-hidden border-gray-100 bg-white shadow-none">
               {/* Daily Goal Row */}
               <div className="p-3 px-4 bg-purple-50 border-b-2 border-gray-100 font-black text-purple-600 transition-colors">
                 <div className="flex justify-between items-center mb-1.5">

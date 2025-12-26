@@ -20,6 +20,20 @@ export interface LevelInfo {
   imageUrl: string;
 }
 
+export const FONT_OPTIONS = [
+    { id: 'Pacifico, cursive', name: 'Bouncy Cat' },
+    { id: 'Lobster, cursive', name: 'Painter Retro' },
+    { id: 'Great Vibes, cursive', name: 'Chapel Elegant' },
+    { id: 'Dancing Script, cursive', name: 'Handmade Play' },
+    { id: 'Satisfy, cursive', name: 'Polaroid Brush' },
+    { id: 'Caveat, cursive', name: 'Modern Signature' },
+    { id: 'Playfair Display, serif', name: 'Luxury Casko' },
+    { id: 'Abril Fatface, serif', name: 'April Monde' },
+    { id: 'Yellowtail, cursive', name: 'Vintage Sign' },
+    { id: 'Oleo Script, cursive', name: 'Soft Bouncy' },
+    { id: 'Marcellus, serif', name: 'Classical Myth' }
+];
+
 export const SIDEBAR_NAV_ITEMS = [
     { id: 'home', label: 'Learn', icon: '🏠' },
     { id: 'search', label: 'Search', icon: '🔍' },
@@ -51,37 +65,37 @@ export const PROFICIENCY_LEVELS: LevelInfo[] = [
     level: 1,
     name: 'Beginner',
     description: 'Recognize words',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=200&auto=format&fit=crop'
+    imageUrl: 'https://i.pinimg.com/736x/f9/33/44/f9334419227bf506ce63900a08c6e7a8.jpg'
   },
   {
     level: 2,
     name: 'Survival',
     description: 'Get by',
-    imageUrl: 'https://images.unsplash.com/photo-1454165833767-027ffea9e78b?q=80&w=200&auto=format&fit=crop'
+    imageUrl: 'https://i.pinimg.com/736x/d2/65/8a/d2658a939e4fee6550d76f44d1402577.jpg'
   },
   {
     level: 3,
     name: 'Functional',
     description: 'Work/study',
-    imageUrl: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=200&auto=format&fit=crop'
+    imageUrl: 'https://i.pinimg.com/736x/12/62/5e/12625eeaf314e9a6bdb63d81fa3573fc.jpg'
   },
   {
     level: 4,
     name: 'Professional',
     description: 'Argue, explain',
-    imageUrl: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=200&auto=format&fit=crop'
+    imageUrl: 'https://i.pinimg.com/736x/22/37/7e/22377e42213fb638fc30df2ded044c9f.jpg'
   },
   {
     level: 5,
     name: 'Academic',
     description: 'Analyze & write',
-    imageUrl: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=200&auto=format&fit=crop'
+    imageUrl: 'https://i.pinimg.com/736x/13/b7/1f/13b71f26513f5280bdf45a8e7709751b.jpg'
   },
   {
     level: 6,
     name: 'Near-native',
     description: 'Think in language',
-    imageUrl: 'https://images.unsplash.com/photo-1544652478-6653e09f18a2?q=80&w=200&auto=format&fit=crop'
+    imageUrl: 'https://i.pinimg.com/736x/57/0a/b5/570ab539a7e65f540de285ac1795687a.jpg'
   }
 ];
 
@@ -395,5 +409,69 @@ export const MYTHICAL_CHARACTERS: AICharacter[] = [
     role: 'Renaissance Master',
     description: 'Polymath, painter, inventor, and anatomist.',
     personality: 'Curious, imaginative, constantly sketching ideas.'
+  },
+  {
+    id: 'napoleon',
+    name: 'Napoleon Bonaparte',
+    avatar: 'https://i.pinimg.com/736x/8b/b3/f6/8bb3f61671ce6a14f415d2b19bb51e65.jpg',
+    role: 'Emperor',
+    description: 'Master strategist and French leader who shaped modern Europe.',
+    personality: 'Ambitious, formal, confident, and highly articulate.'
+  },
+  {
+    id: 'valkyrie',
+    name: 'Valkyrie',
+    avatar: 'https://i.pinimg.com/736x/fb/48/ef/fb48ef1722d3e5a229161aea85755cfa.jpg',
+    role: 'Chooser of Slain',
+    description: 'Shield-maiden of Valhalla who guides heroes to the afterlife.',
+    personality: 'Fearless, ethereal, fierce, and deeply loyal.'
+  },
+  {
+    id: 'joan',
+    name: 'Joan of Arc',
+    avatar: 'https://i.pinimg.com/736x/6f/fd/53/6ffd535445915a4fcc2b464edcae7e38.jpg',
+    role: 'Saint of Orléans',
+    description: 'The young peasant girl who led the French army to victory.',
+    personality: 'Pious, determined, inspiring, and remarkably brave.'
+  },
+  {
+    id: 'king_arthur',
+    name: 'King Arthur',
+    avatar: 'https://i.pinimg.com/736x/25/95/0c/25950cda0b3171ad8c0f65ce7e165d3c.jpg',
+    role: 'The High King',
+    description: 'The legendary sovereign of Camelot and wielder of Excalibur.',
+    personality: 'Noble, chivalrous, determined, and deeply just.'
+  },
+  {
+    id: 'merlin',
+    name: 'Merlin',
+    avatar: 'https://i.pinimg.com/736x/fe/3e/df/fe3edf9ece39a05d51c812e5542520b9.jpg',
+    role: 'Wizard of Britain',
+    description: 'The master of prophecy, magic, and advisor to the Round Table.',
+    personality: 'Enigmatic, eccentric, incredibly wise, and multi-faceted.'
+  },
+  {
+    id: 'robin_hood',
+    name: 'Robin Hood',
+    avatar: 'https://i.pinimg.com/736x/ea/59/5b/ea595b7b44e2669606143129920c5ba7.jpg',
+    role: 'Legendary Outlaw',
+    description: 'The heroic archer of Sherwood Forest who steals from the rich.',
+    personality: 'Merry, defiant, highly skilled, and compassionate.'
+  },
+  {
+    id: 'black_shuck',
+    name: 'Black Shuck',
+    avatar: 'https://i.pinimg.com/736x/cb/8a/26/cb8a261f8141c5cd5443611176319fee.jpg',
+    role: 'Spectral Hound',
+    description: 'The terrifying ghostly black dog that haunts the English coastline.',
+    personality: 'Ominous, growling, ancient, yet strangely poetic in speech.'
+  },
+  {
+    id: 'puck',
+    name: 'Puck',
+    avatar: 'https://i.pinimg.com/736x/b3/8d/c4/b38dc4529e3e6f4c0b535927dac9c15a.jpg',
+    role: 'Trickster Sprite',
+    description: 'Also known as Robin Goodfellow, a mischievous nature spirit.',
+    personality: 'Prankish, lighthearted, fast-talking, and easily amused.'
   }
 ];

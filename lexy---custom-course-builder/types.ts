@@ -124,6 +124,7 @@ export interface UserStats {
   savedWordIds: Record<string, string[]>; // Map of language -> array of word IDs
   currentCourseId: string;
   selectedMascotId: string;
+  brandFont: string;
   notifications: NotificationSettings;
   // New Stats
   lessonsCompleted: number;
