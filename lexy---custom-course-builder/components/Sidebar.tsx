@@ -88,20 +88,44 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Unified Stats Box */}
             <div className="duo-card overflow-hidden border-gray-100 bg-white shadow-none">
-              {/* Daily Goal Row */}
-              <div className="p-3 px-4 bg-purple-50 border-b-2 border-gray-100 font-black text-purple-600 transition-colors">
-                <div className="flex justify-between items-center mb-1.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-base">🎯</span>
-                    <span className="text-[10px] uppercase tracking-widest leading-none">Daily Goal</span>
+              {/* Daily Goal Row - Redesigned to fit larger indicator and separate text container */}
+              <div className="bg-purple-50 border-b-2 border-gray-100 font-black text-purple-600 transition-colors flex items-center justify-between h-[3.6rem] overflow-hidden">
+                {/* Separate container for text with margins */}
+                <div className="flex items-center gap-3 ml-6">
+                  <span className="text-xl">🎯</span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-[0.15em] leading-none">Daily Goal</span>
                   </div>
-                  <span className="text-[10px] leading-none">{goalProgress}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-purple-100/50 rounded-full overflow-hidden">
-                   <div 
-                    className="h-full bg-[#ad46ff] rounded-full transition-all duration-500" 
-                    style={{ width: `${goalProgress}%` }} 
-                   />
+                
+                {/* Larger Circular Progress Indicator - Resized to fit row height snugly without extra padding */}
+                <div className="relative h-full w-[4.5rem] flex items-center justify-center">
+                  <svg className="w-full h-full p-2 -rotate-90" viewBox="0 0 36 36">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      fill="transparent"
+                      className="text-purple-100/50"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="16"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      fill="transparent"
+                      strokeDasharray={100.53}
+                      strokeDashoffset={100.53 - (100.53 * goalProgress) / 100}
+                      strokeLinecap="round"
+                      className="text-[#ad46ff] transition-all duration-700 ease-out"
+                    />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center text-xs leading-none font-black text-purple-700">
+                    {goalProgress}
+                  </span>
                 </div>
               </div>
 

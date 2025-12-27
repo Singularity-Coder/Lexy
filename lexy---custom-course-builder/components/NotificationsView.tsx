@@ -128,11 +128,14 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ settings, onUpdat
         </button>
       </div>
 
-      <div className="p-8 duo-card bg-blue-50/50 border-blue-100 flex items-center space-x-6">
-        <span className="text-5xl">💡</span>
-        <p className="text-blue-700 font-bold leading-relaxed">
-          Consistency is key! Users who set reminders are <b>3x more likely</b> to complete their first course unit.
-        </p>
+      <div className="duo-card p-12 bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-100 flex flex-col md:flex-row items-center gap-10">
+        <div className="text-7xl">💡</div>
+        <div className="space-y-4">
+          <h3 className="text-2xl font-black text-purple-800">Pro Tip</h3>
+          <p className="text-purple-600 font-bold leading-relaxed">
+            Consistency is key! Users who set reminders are <span className="text-purple-700 font-black">3x more likely</span> to complete their first course unit.
+          </p>
+        </div>
       </div>
     </div>
   );
