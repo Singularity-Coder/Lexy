@@ -18,6 +18,7 @@ interface SettingsViewProps {
   brandFont: string;
   onUpdateBrandFont: (font: string) => void;
   onCreateCourse?: () => void;
+  onEditCourse?: () => void;
   notificationSettings: NotificationSettings;
   onUpdateNotifications: (settings: NotificationSettings) => void;
 }
@@ -35,6 +36,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   brandFont,
   onUpdateBrandFont,
   onCreateCourse,
+  onEditCourse,
   notificationSettings,
   onUpdateNotifications
 }) => {
@@ -45,6 +47,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
   const currentLevelInfo = PROFICIENCY_LEVELS.find(l => l.level === currentProficiency) || PROFICIENCY_LEVELS[0];
   const currentMascot = MASCOTS.find(m => m.id === selectedMascotId) || MASCOTS[0];
+  const currentActiveCourse = availableCourses.find(c => c.id === currentCourseId);
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEditCourse) {
+      onEditCourse();
+    }
+  };
 
   const LanguageSelector = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 pb-8">
@@ -114,7 +125,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               : 'bg-white border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
           }`}
         >
-          {/* Perfect 1:1 Square Image Section */}
           <div className="aspect-square w-full overflow-hidden bg-gray-50">
             <img 
               src={info.imageUrl} 
@@ -122,8 +132,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               alt={info.name} 
             />
           </div>
-          
-          {/* Text Section Below Image - Adjusted for balance with the square format */}
           <div className="p-4 md:p-5 space-y-1 bg-inherit">
             <h3 className={`font-black text-sm md:text-base ${currentProficiency === info.level ? 'text-purple-700' : 'text-gray-800'}`}>
               {info.name}
@@ -178,7 +186,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           <p className="text-lg text-gray-500 font-bold mt-1">Customize your learning experience and manage course data.</p>
         </div>
 
-        {/* Language Switcher Section */}
+        {/* My Languages Section */}
         <section className="space-y-6">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">My Languages</h2>
@@ -186,10 +194,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           
           <div className="duo-card p-6 bg-purple-50/10 border-purple-50 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center space-x-6">
-              <div>
-                <h3 className="text-2xl font-black text-[#ad46ff]">{availableCourses.find(c => c.id === currentCourseId)?.language || 'None'}</h3>
+            <div className="flex items-center justify-between flex-1 w-full gap-4">
+              <div className="flex items-center">
+                <h3 className="text-2xl font-black text-[#ad46ff]">
+                  {currentActiveCourse?.language || 'None'}
+                </h3>
               </div>
+              <button 
+                type="button"
+                onClick={handleEditClick}
+                className="bg-white border-2 border-gray-200 p-4 px-8 rounded-2xl font-black text-gray-500 hover:bg-gray-100 shadow-[0_4px_0_#e5e5e5] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs relative z-10"
+              >
+                EDIT
+              </button>
             </div>
             <button 
               onClick={() => setIsLanguageModalOpen(true)}
@@ -200,7 +217,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </section>
 
-        {/* Proficiency Stage Selection */}
+        {/* Learning Stage */}
         <section className="space-y-6">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">Learning Stage</h2>
@@ -226,7 +243,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </section>
 
-        {/* Mascot Selection */}
+        {/* Mascot */}
         <section className="space-y-6">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">Choose Your Mascot</h2>
@@ -251,7 +268,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </section>
 
-        {/* Brand Style Section */}
+        {/* Font Style */}
         <section className="space-y-6">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">Logo Font Style</h2>
@@ -273,7 +290,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </section>
 
-        {/* Course Management */}
+        {/* Management */}
         <section className="space-y-6">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">Course Management</h2>
@@ -281,7 +298,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Create New Course Card */}
             <div className="duo-card p-8 bg-purple-50 border-purple-200/50 flex flex-col justify-between">
                <div className="space-y-4">
                   <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm border-2 border-purple-200 text-[#ad46ff]">🛠️</div>
@@ -298,7 +314,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                </button>
             </div>
 
-            {/* Import LEXY Card */}
             <div className="duo-card p-8 bg-white flex flex-col justify-between">
                <div className="space-y-4">
                   <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-3xl shadow-sm border-2 border-gray-100">📂</div>
@@ -310,14 +325,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                <div className="mt-8">
                   <UploadManager 
                     onCourseLoaded={onCourseLoaded} 
-                    existingCourses={availableCourses.map(c => c.language)}
+                    existingCourses={availableCourses.map(c => ({ id: c.id, language: c.language }))}
                   />
                </div>
             </div>
           </div>
         </section>
 
-        {/* Preferences Section */}
+        {/* Preferences */}
         <section className="space-y-6">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">Preferences</h2>
@@ -366,7 +381,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <button 
               onClick={() => {
-                if (confirm("Are you absolutely sure? All progress will be lost!")) {
+                if (window.confirm("Are you absolutely sure? All progress will be lost!")) {
                   onResetProgress();
                 }
               }}
@@ -418,7 +433,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       )}
 
-      {/* Stage Selection Modal - Narrowed slightly and vertical spacing reduced */}
+      {/* Stage Selection Modal */}
       {isStageModalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
           <div className="bg-white rounded-[3rem] p-8 max-w-4xl w-full space-y-3 shadow-2xl animate-in zoom-in duration-300 mx-6">

@@ -6,11 +6,12 @@ import JSZip from 'jszip';
 interface CourseBuilderProps {
   onCourseSaved: (course: CourseData) => void;
   onCancel: () => void;
+  initialCourse?: CourseData;
 }
 
-const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel }) => {
+const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, initialCourse }) => {
   const [step, setStep] = useState(0);
-  const [course, setCourse] = useState<Partial<CourseData>>({
+  const [course, setCourse] = useState<Partial<CourseData>>(initialCourse || {
     id: `course-${Date.now()}`,
     courseTitle: '',
     language: '',

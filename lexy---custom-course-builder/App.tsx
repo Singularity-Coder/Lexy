@@ -30,6 +30,7 @@ const App: React.FC = () => {
   const [course, setCourse] = useState<CourseData>(DUMMY_COURSE);
   const [mediaMap, setMediaMap] = useState<Map<string, string>>(new Map());
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [editingCourse, setEditingCourse] = useState<CourseData | null>(null);
   
   const INITIAL_STATS: UserStats = {
     xp: 0,
@@ -65,10 +66,8 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('lexi_stats_v1');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Data migrations
       if (parsed.selectedMascotId === undefined) parsed.selectedMascotId = 'girl';
       if (parsed.brandFont === undefined) parsed.brandFont = 'Pacifico, cursive';
-      
       if (parsed.lessonsCompleted === undefined) {
         return { ...parsed, ...INITIAL_STATS, xp: parsed.xp, level: parsed.level };
       }
@@ -91,18 +90,28 @@ const App: React.FC = () => {
   }, [stats.currentCourseId, availableCourses]);
 
   const handleCourseLoaded = (newCourse: CourseData, newMediaMap: Map<string, string>) => {
-    const courseWithId = { ...newCourse, id: newCourse.id || `course-${Date.now()}` };
+    // 1. Identify conflict by ID ONLY
     setAvailableCourses(prev => {
-      const exists = prev.findIndex(c => c.id === courseWithId.id);
-      if (exists !== -1) {
+      const existingIdx = prev.findIndex(c => newCourse.id && c.id === newCourse.id);
+
+      if (existingIdx !== -1) {
+        // OVERWRITE CASE
         const updated = [...prev];
-        updated[exists] = courseWithId;
+        updated[existingIdx] = newCourse;
         return updated;
       }
-      return [...prev, courseWithId];
+      // NEW COURSE CASE
+      return [...prev, newCourse];
     });
-    setStats(prev => ({ ...prev, currentCourseId: courseWithId.id }));
+
+    // 2. Switch to the newly loaded/updated course
+    setStats(prev => ({ 
+      ...prev, 
+      currentCourseId: newCourse.id
+    }));
+    
     setMediaMap(newMediaMap);
+    setEditingCourse(null);
     setActiveView('home');
   };
 
@@ -112,6 +121,7 @@ const App: React.FC = () => {
   };
 
   const handleSidebarNav = (view: ViewType) => {
+    if (view !== 'course-builder') setEditingCourse(null);
     setActiveView(view);
   };
 
@@ -139,13 +149,9 @@ const App: React.FC = () => {
       const newSaved = currentSaved.includes(wordId)
         ? currentSaved.filter(id => id !== wordId)
         : [...currentSaved, wordId];
-      
       return {
         ...prev,
-        savedWordIds: {
-          ...prev.savedWordIds,
-          [language]: newSaved
-        }
+        savedWordIds: { ...prev.savedWordIds, [language]: newSaved }
       };
     });
   };
@@ -155,7 +161,7 @@ const App: React.FC = () => {
   };
 
   const handleResetProgress = () => {
-    if(confirm("Reset everything?")) {
+    if(window.confirm("Reset everything?")) {
       setStats(INITIAL_STATS);
       setAvailableCourses([DUMMY_COURSE]);
       setActiveView('home');
@@ -189,12 +195,10 @@ const App: React.FC = () => {
       const sessionAccuracy = totalExercises > 0 ? ((totalExercises - mistakes.length) / totalExercises) * 100 : 100;
       const newAccuracy = prev.accuracy === 0 ? sessionAccuracy : (prev.accuracy + sessionAccuracy) / 2;
       const isPerfect = mistakes.length === 0;
-
       const updatedAchievements = prev.achievements.map(a => {
         if (a.id === '2') return { ...a, currentValue: newXp, unlocked: newXp >= a.requirement };
         return a;
       });
-
       return { 
         ...prev, 
         xp: newXp, 
@@ -202,13 +206,23 @@ const App: React.FC = () => {
         failedExercises: [...prev.failedExercises, ...mistakes].slice(-20),
         achievements: updatedAchievements,
         lessonsCompleted: newLessonsCompleted,
-        totalTimeMinutes: prev.totalTimeMinutes + 15, // Mock time
+        totalTimeMinutes: prev.totalTimeMinutes + 15,
         accuracy: Math.round(newAccuracy),
         perfectLessons: isPerfect ? prev.perfectLessons + 1 : prev.perfectLessons
       };
     });
-
     setActiveLesson(null);
+  };
+
+  const handleEditCurrentCourse = () => {
+    const current = availableCourses.find(c => c.id === stats.currentCourseId);
+    if (current) {
+      setEditingCourse(current);
+      setActiveView('course-builder');
+    } else {
+      setEditingCourse(course);
+      setActiveView('course-builder');
+    }
   };
 
   const filteredUnits = course.units.filter(u => !u.level || u.level === stats.proficiencyLevel);
@@ -216,7 +230,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex bg-white min-h-screen font-['Nunito'] select-none">
-      {/* Sidebar - Fixed w-72 on Desktop, Slide-in on Mobile */}
       <Sidebar 
         onNavClick={handleSidebarNav} 
         activeView={activeView} 
@@ -230,9 +243,7 @@ const App: React.FC = () => {
         brandFont={stats.brandFont}
       />
 
-      {/* Main Content Area - Fixed Left Padding of 72 on Desktop to accommodate fixed sidebar */}
       <main className="flex-1 relative transition-all duration-300 md:pl-72 bg-white min-h-screen">
-        {/* Mobile Header bar - Visible only on small screens */}
         <div className="md:hidden p-4 border-b-2 border-gray-100 flex items-center justify-between sticky top-0 bg-white z-40">
            <div className="flex items-center gap-4">
               <button 
@@ -241,12 +252,7 @@ const App: React.FC = () => {
               >
                 <span className="text-xl">☰</span>
               </button>
-              <span 
-                className="text-2xl text-purple-600"
-                style={{ fontFamily: stats.brandFont }}
-              >
-                Lexy
-              </span>
+              <span className="text-2xl text-purple-600" style={{ fontFamily: stats.brandFont }}>Lexy</span>
            </div>
            <div className="flex gap-2">
              <div className="flex items-center gap-1 p-2 px-3 bg-orange-50 text-orange-500 rounded-xl font-black text-xs border border-orange-100">
@@ -258,10 +264,8 @@ const App: React.FC = () => {
            </div>
         </div>
 
-        {/* View Routing */}
         {activeView === 'home' && (
           <div className="py-10 pb-12 max-w-4xl mx-auto px-4 bg-white">
-             {/* Header Section - Adjusted padding to match Search menu consistency */}
              <div className="mb-4 px-4 text-left">
                 <h1 className="text-4xl font-black text-gray-800 tracking-tight">{course.language}</h1>
                 <p className="text-lg text-gray-500 font-bold mt-1">Level: {currentLevelName}</p>
@@ -302,7 +306,15 @@ const App: React.FC = () => {
         {activeView === 'my-lists' && <MyListsView dictionary={course.dictionary} savedWordIds={stats.savedWordIds[course.language] || []} onToggleSaveWord={handleToggleSaveWord} />}
         {activeView === 'profile' && <ProfileView stats={stats} />}
         {activeView === 'ai-chats' && <AIChatsView currentLanguage={course.language} />}
-        {activeView === 'course-builder' && <CourseBuilder onCourseSaved={(c) => handleCourseLoaded(c, new Map())} onCancel={() => setActiveView('settings')} />}
+        
+        {activeView === 'course-builder' && (
+          <CourseBuilder 
+            key={editingCourse?.id || 'new'}
+            initialCourse={editingCourse || undefined}
+            onCourseSaved={(c) => handleCourseLoaded(c, new Map())} 
+            onCancel={() => { setEditingCourse(null); setActiveView('settings'); }} 
+          />
+        )}
         
         {activeView === 'settings' && (
           <SettingsView 
@@ -318,12 +330,12 @@ const App: React.FC = () => {
             brandFont={stats.brandFont}
             onUpdateBrandFont={handleUpdateBrandFont}
             onCreateCourse={() => setActiveView('course-builder')}
+            onEditCourse={handleEditCurrentCourse}
             notificationSettings={stats.notifications}
             onUpdateNotifications={handleUpdateNotifications}
           />
         )}
         {activeView === 'review' && <ReviewMode exercises={stats.failedExercises} onClose={() => setActiveView('home')} />}
-
         {activeLesson && <LessonSession lesson={activeLesson} mediaMap={mediaMap} onFinish={handleFinishLesson} onQuit={() => setActiveLesson(null)} />}
       </main>
     </div>
