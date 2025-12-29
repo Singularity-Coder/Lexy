@@ -4,15 +4,16 @@ import { CourseData, DictionaryEntry, GrammarLesson, CultureItem, Unit, CultureA
 import JSZip from 'jszip';
 
 interface CourseBuilderProps {
-  onCourseSaved: (course: CourseData) => void;
+  onCourseSaved: (course: CourseData, originalId?: string) => void;
   onCancel: () => void;
   initialCourse?: CourseData;
 }
 
 const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, initialCourse }) => {
   const [step, setStep] = useState(0);
+  const [initialId] = useState(initialCourse?.id); // Track the ID we started with
   const [course, setCourse] = useState<Partial<CourseData>>(initialCourse || {
-    id: `course-${Date.now()}`,
+    id: '', // Will be set by language
     courseTitle: '',
     language: '',
     units: [],
@@ -53,7 +54,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
       ]
     } as CourseData;
     
-    onCourseSaved(finalCourse);
+    // Pass back the new data and the original ID to handle renames
+    onCourseSaved(finalCourse, initialId);
   };
 
   const handleExportLexy = async () => {
@@ -106,7 +108,6 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
         title: course.courseTitle || "Untitled Course",
         description: `A custom language course for ${course.language}`,
         author: "Lexy User",
-        language: course.language || "Unknown"
       },
       assets: {},
       dataFiles: {
@@ -115,7 +116,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
         culture: { path: "data/culture.json", version: 1 },
         units: { path: "data/units.json", version: 1 }
       },
-      courseId: course.id
+      courseId: course.language // Course ID is now the language name
     };
     
     zip.file("manifest.json", JSON.stringify(manifest, null, 2));
@@ -197,7 +198,10 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
                       placeholder="e.g. Spanish, High Valyrian"
                       className="w-full p-6 rounded-3xl border-2 border-gray-200 focus:border-[#ad46ff] font-black outline-none bg-gray-50 text-gray-800 placeholder-gray-300 text-xl transition-all"
                       value={course.language}
-                      onChange={e => updateCourse('language', e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setCourse(prev => ({ ...prev, language: val, id: val }));
+                      }}
                     />
                   </div>
                   <div className="space-y-3">

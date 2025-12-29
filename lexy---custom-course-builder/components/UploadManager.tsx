@@ -13,6 +13,10 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Custom Modal State
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [pendingCourseData, setPendingCourseData] = useState<CourseData | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -21,11 +25,13 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
     }
   };
 
+  // Fixed React.DragOverEvent to React.DragEvent
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
+  // Fixed React.DragLeaveEvent to React.DragEvent
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -49,17 +55,9 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
     });
   };
 
-  const handleUpload = async () => {
-    if (!lexyFile) {
-      setError("Please select a .lexy course file.");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
+  const processFile = async (file: File) => {
     try {
-      const zip = await JSZip.loadAsync(lexyFile);
+      const zip = await JSZip.loadAsync(file);
       const manifestFile = zip.file("manifest.json");
       if (!manifestFile) {
         throw new Error("Invalid .lexy file: manifest.json not found.");
@@ -73,22 +71,9 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
       }
 
       const manifestCourseId = manifest.courseId;
-      const languageName = manifest.fields?.language || "Unknown";
-
-      // 1. CONFLICT CHECK: Match ONLY by courseId
-      const conflict = existingCourses.find(c => manifestCourseId && c.id === manifestCourseId);
-
-      // 2. PERMISSION: Only proceed if no conflict OR user explicitly authorizes override
-      if (conflict) {
-        const userAuthorized = window.confirm(
-          `A course with ID "${manifestCourseId}" already exists.\n\nOverwriting will replace all progress, lessons, and data for this course ID.\n\nDo you want to proceed?`
-        );
-        
-        if (!userAuthorized) {
-          setIsLoading(false);
-          return; // STOP: User cancelled the override
-        }
-      }
+      // As per user requirement, courseId is the language name. 
+      // manifest.fields.language is ignored or removed.
+      const languageName = manifestCourseId || "Unknown";
 
       // 3. Process data files
       const dataFiles = manifest.dataFiles || {};
@@ -127,26 +112,68 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
 
       const targetId = manifestCourseId || `course-${Date.now()}`;
       
-      const courseData: CourseData = {
+      return {
         id: targetId,
         courseTitle: manifest.fields?.title || "Imported Course",
-        language: languageName,
+        language: languageName, // Synced with ID
         units: units,
         dictionary: dictionary,
         grammar: grammar,
         cultureItems: cultureItems
-      };
+      } as CourseData;
       
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!lexyFile) {
+      setError("Please select a .lexy course file.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const courseData = await processFile(lexyFile);
+      
+      // 1. CONFLICT CHECK: Match ONLY by courseId
+      const conflict = existingCourses.find(c => courseData.id && c.id === courseData.id);
+
+      if (conflict) {
+        // Show Custom Conflict Modal instead of window.confirm
+        setPendingCourseData(courseData);
+        setShowConflictModal(true);
+        setIsLoading(false);
+        return; 
+      }
+
+      // No conflict, proceed
       onCourseLoaded(courseData, new Map());
-      setLexyFile(null);
-      const input = document.getElementById('lexy-upload-input') as HTMLInputElement;
-      if (input) input.value = '';
+      resetForm();
       
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to process .lexy file.");
-    } finally {
       setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setLexyFile(null);
+    setPendingCourseData(null);
+    setShowConflictModal(false);
+    const input = document.getElementById('lexy-upload-input') as HTMLInputElement;
+    if (input) input.value = '';
+    setIsLoading(false);
+  };
+
+  const confirmOverride = () => {
+    if (pendingCourseData) {
+      onCourseLoaded(pendingCourseData, new Map());
+      resetForm();
     }
   };
 
@@ -209,6 +236,41 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
       >
         {isLoading ? 'UPLOADING...' : 'IMPORT LEXY'}
       </button>
+
+      {/* Custom Conflict Modal */}
+      {showConflictModal && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+            <div className="p-10 text-center space-y-6">
+              <div className="w-20 h-20 bg-orange-100 text-orange-500 rounded-[2rem] flex items-center justify-center text-4xl mx-auto shadow-inner border-2 border-orange-50">
+                ⚠️
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-gray-800 tracking-tight leading-tight">Course Conflict!</h3>
+                <p className="text-sm font-bold text-gray-400 leading-relaxed">
+                  A course with ID <span className="text-purple-600">"{pendingCourseData?.id}"</span> already exists.
+                  Overwriting will replace all your progress, lessons, and data for this course ID.
+                </p>
+              </div>
+              
+              <div className="flex flex-col gap-3 pt-4">
+                <button
+                  onClick={confirmOverride}
+                  className="w-full p-4 bg-[#ad46ff] text-white rounded-2xl font-black shadow-[0_4px_0_#8439a3] hover:scale-105 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
+                >
+                  OVERWRITE & IMPORT
+                </button>
+                <button
+                  onClick={resetForm}
+                  className="w-full p-4 bg-white text-gray-400 rounded-2xl font-black border-2 border-gray-100 shadow-[0_4px_0_#e5e5e5] hover:bg-gray-50 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

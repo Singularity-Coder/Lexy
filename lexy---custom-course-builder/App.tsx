@@ -89,18 +89,19 @@ const App: React.FC = () => {
     if (active) setCourse(active);
   }, [stats.currentCourseId, availableCourses]);
 
-  const handleCourseLoaded = (newCourse: CourseData, newMediaMap: Map<string, string>) => {
-    // 1. Identify conflict by ID ONLY
+  const handleCourseLoaded = (newCourse: CourseData, newMediaMap: Map<string, string>, originalId?: string) => {
     setAvailableCourses(prev => {
-      const existingIdx = prev.findIndex(c => newCourse.id && c.id === newCourse.id);
+      // 1. If we are replacing an existing course (Overwrite during import or Rename during edit)
+      const targetIdToFind = originalId || newCourse.id;
+      const existingIdx = prev.findIndex(c => targetIdToFind && c.id === targetIdToFind);
 
       if (existingIdx !== -1) {
-        // OVERWRITE CASE
         const updated = [...prev];
         updated[existingIdx] = newCourse;
         return updated;
       }
-      // NEW COURSE CASE
+      
+      // 2. If it's a completely new language/ID
       return [...prev, newCourse];
     });
 
@@ -311,7 +312,7 @@ const App: React.FC = () => {
           <CourseBuilder 
             key={editingCourse?.id || 'new'}
             initialCourse={editingCourse || undefined}
-            onCourseSaved={(c) => handleCourseLoaded(c, new Map())} 
+            onCourseSaved={(c, oldId) => handleCourseLoaded(c, new Map(), oldId)} 
             onCancel={() => { setEditingCourse(null); setActiveView('settings'); }} 
           />
         )}

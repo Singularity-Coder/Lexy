@@ -57,7 +57,7 @@ export const MASCOTS = [
   { id: 'fox', name: 'Foxy', icon: '🦊' },
   { id: 'panda', name: 'Pan', icon: '🐼' },
   { id: 'bear', name: 'Barry', icon: '🐻' },
-  { id: 'dino', name: 'Roar', icon: '🦖' },
+  { id: 'dino', name: 'Roar', icon: 'Rex' },
 ];
 
 export const PROFICIENCY_LEVELS: LevelInfo[] = [
@@ -118,7 +118,7 @@ const generateDummyLessons = (unitId: string, count: number, startStatus: 'compl
 };
 
 export const DUMMY_COURSE: CourseData = {
-  id: "default-english",
+  id: "English", // ID is now strictly the language name
   courseTitle: "English Mastery",
   language: "English",
   units: [
