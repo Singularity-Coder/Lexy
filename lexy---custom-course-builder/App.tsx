@@ -307,7 +307,7 @@ const App: React.FC = () => {
         {activeView === 'notifications' && <NotificationsView settings={stats.notifications} onUpdate={handleUpdateNotifications} />}
         {activeView === 'my-lists' && <MyListsView dictionary={course.dictionary} savedWordIds={stats.savedWordIds[course.language] || []} onToggleSaveWord={handleToggleSaveWord} />}
         {activeView === 'profile' && <ProfileView stats={stats} />}
-        {activeView === 'ai-chats' && <AIChatsView currentLanguage={course.language} />}
+        {activeView === 'ai-chats' && <AIChatsView course={course} />}
         
         {activeView === 'course-builder' && (
           <CourseBuilder 

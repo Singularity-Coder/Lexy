@@ -87,6 +87,7 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
       const grammar = dataFiles.grammar ? await loadJson(dataFiles.grammar.path) : [];
       const cultureItems = (dataFiles.culture ? await loadJson(dataFiles.culture.path) : []) as CultureItem[];
       const units = dataFiles.units ? await loadJson(dataFiles.units.path) : [];
+      const aiCharacters = dataFiles.ai_chats ? await loadJson(dataFiles.ai_chats.path) : [];
 
       // Process assets
       for (const item of cultureItems) {
@@ -119,7 +120,8 @@ const UploadManager: React.FC<UploadManagerProps> = ({ onCourseLoaded, existingC
         units: units,
         dictionary: dictionary,
         grammar: grammar,
-        cultureItems: cultureItems
+        cultureItems: cultureItems,
+        aiCharacters: aiCharacters
       } as CourseData;
       
     } catch (err: any) {

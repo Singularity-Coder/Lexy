@@ -1,28 +1,44 @@
 
 import { GoogleGenAI } from "@google/genai";
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { MYTHICAL_CHARACTERS } from '../constants';
-import { AICharacter, ChatMessage } from '../types';
+import { AICharacter, ChatMessage, CourseData } from '../types';
 
 interface AIChatsViewProps {
-  currentLanguage: string;
+  course: CourseData;
 }
 
-const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
-  const [selectedCharacter, setSelectedCharacter] = useState<AICharacter>(MYTHICAL_CHARACTERS[0]);
-  const [viewMode, setViewMode] = useState<'list' | 'chat'>('list'); // For mobile toggle logic
+const AIChatsView: React.FC<AIChatsViewProps> = ({ course }) => {
+  const characters = useMemo(() => {
+    return (course.aiCharacters && course.aiCharacters.length > 0) 
+      ? course.aiCharacters 
+      : MYTHICAL_CHARACTERS;
+  }, [course.aiCharacters]);
+
+  const [selectedCharacter, setSelectedCharacter] = useState<AICharacter>(characters[0]);
+  const [viewMode, setViewMode] = useState<'list' | 'chat'>('list'); 
   const [showFullAvatar, setShowFullAvatar] = useState(false);
-  const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>({
-    'zeus': [
-      { role: 'model', text: "Mortal! I sense you are learning the nuances of the tongue. How can the King of Olympus assist your journey?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
-    ],
-    'athena': [
-       { role: 'model', text: "Knowledge is the greatest weapon. Greetings, student. Shall we refine your understanding together?", timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
-    ]
-  });
+  
+  const [chatHistories, setChatHistories] = useState<Record<string, ChatMessage[]>>({});
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Initialize histories
+  useEffect(() => {
+    const initialHistories: Record<string, ChatMessage[]> = {};
+    characters.forEach(char => {
+      initialHistories[char.id] = [
+        { 
+          role: 'model', 
+          text: `Greetings! I am ${char.name}, your tutor. How can I assist your ${course.language} journey today?`, 
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+        }
+      ];
+    });
+    setChatHistories(initialHistories);
+    setSelectedCharacter(characters[0]);
+  }, [characters, course.language]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -48,8 +64,9 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `You are ${selectedCharacter.name}, ${selectedCharacter.role}. Personality: ${selectedCharacter.personality}.
-      The student is learning ${currentLanguage}. Respond to their message in character.
+      const prompt = `You are ${selectedCharacter.name}, ${selectedCharacter.role}.
+      ${selectedCharacter.personality}
+      The student is learning ${course.language}. Respond to their message in character.
       Student says: "${inputValue}"
       Keep responses relatively short, thematic, and encouraging for a language learner.`;
 
@@ -60,7 +77,7 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
 
       const modelMsg: ChatMessage = {
         role: 'model',
-        text: response.text || "My thunders are silent for now. Try again, seeker.",
+        text: response.text || "I'm deep in thought right now. Please try again soon.",
         timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
       };
 
@@ -77,28 +94,23 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
 
   const handleCharacterSelect = (char: AICharacter) => {
     setSelectedCharacter(char);
-    setViewMode('chat'); // Switch to chat view on mobile
+    setViewMode('chat');
   };
 
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden">
-      {/* Main Container - End to End */}
       <div className="flex-1 flex overflow-hidden border-t-2 border-gray-100">
-        
-        {/* Left Sidebar: Character Grid - Hidden on mobile when viewing chat */}
         <div className={`${viewMode === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-[380px] border-r-2 border-gray-100 flex-col bg-gray-50/20 overflow-hidden shrink-0`}>
-          {/* Header Section */}
           <div className="pt-10 px-8 pb-8 border-b-2 border-gray-100 bg-white shrink-0">
             <h1 className="text-4xl font-black text-gray-800 tracking-tight">AI Chats</h1>
             <p className="text-lg text-gray-500 font-bold mt-1">
-              Chat with figures of <span className="text-[#ad46ff] font-black">{currentLanguage}</span> language.
+              Chat with figures of <span className="text-[#ad46ff] font-black">{course.language}</span> language.
             </p>
           </div>
 
-          {/* 2x2 Grid Area */}
           <div className="flex-1 overflow-y-auto scrollbar-hide p-6">
             <div className="grid grid-cols-2 gap-4">
-              {MYTHICAL_CHARACTERS.map(char => {
+              {characters.map(char => {
                 const isActive = selectedCharacter.id === char.id;
                 
                 return (
@@ -111,8 +123,7 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
                         : 'bg-white border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
                     }`}
                   >
-                    {/* End-to-End Image Section */}
-                    <div className="h-[120px] w-full overflow-hidden shrink-0">
+                    <div className="h-[120px] w-full overflow-hidden shrink-0 bg-gray-100">
                       <img 
                         src={char.avatar} 
                         alt={char.name} 
@@ -120,8 +131,7 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
                       />
                     </div>
                     
-                    {/* Text Section Below Image */}
-                    <div className="p-4 flex flex-col items-center">
+                    <div className="p-4 flex flex-col items-center overflow-hidden">
                       <h3 className={`font-black text-sm truncate w-full ${isActive ? 'text-purple-700' : 'text-gray-800'}`}>
                         {char.name}
                       </h3>
@@ -136,19 +146,15 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
           </div>
         </div>
 
-        {/* Right Pane: Conversation Area - Hidden on mobile when viewing list */}
         <div className={`${viewMode === 'list' ? 'hidden md:flex' : 'flex'} flex-1 flex flex-col relative bg-white`}>
-          {/* Active Character Header */}
           <div className="p-5 px-8 bg-white border-b-2 border-gray-100 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-4">
-              {/* Mobile Back Button */}
               <button 
                 onClick={() => setViewMode('list')}
                 className="md:hidden w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100"
               >
                 ←
               </button>
-              {/* Avatar - Clickable to show full image */}
               <div 
                 onClick={() => setShowFullAvatar(true)}
                 className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-gray-100 shadow-sm bg-gray-50 cursor-zoom-in hover:scale-105 active:scale-95 transition-all"
@@ -169,12 +175,10 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
             </div>
           </div>
 
-          {/* Messages Window Area */}
           <div 
             ref={scrollRef}
             className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 scrollbar-hide bg-gray-50/10"
           >
-            {/* Centered Character Context Box */}
             <div className="flex justify-center mb-12">
               <div className="bg-white p-6 md:p-8 rounded-[2rem] border-2 border-gray-100 text-center max-w-sm shadow-sm animate-in fade-in zoom-in duration-500">
                  <div className="w-14 h-14 bg-gray-50 rounded-2xl mx-auto mb-5 flex items-center justify-center text-3xl shadow-inner border border-gray-100">📜</div>
@@ -213,7 +217,6 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
             )}
           </div>
 
-          {/* Bottom Chat Input Bar */}
           <div className="p-4 md:p-8 bg-white border-t-2 border-gray-100 shrink-0">
             <div className="max-w-4xl mx-auto flex items-center gap-3 md:gap-5">
               <button className="hidden sm:flex w-14 h-14 rounded-2xl bg-gray-50 items-center justify-center text-3xl hover:bg-gray-100 transition-all active:scale-90 border-2 border-transparent hover:border-gray-200">📎</button>
@@ -244,13 +247,11 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
         </div>
       </div>
 
-      {/* Full Avatar Modal - Full Screen height, info in bottom-left corner with gradient background */}
       {showFullAvatar && (
         <div 
           className="fixed inset-0 z-[200] bg-black flex items-center justify-center animate-in fade-in duration-300"
           onClick={() => setShowFullAvatar(false)}
         >
-          {/* Close Button */}
           <button 
             onClick={() => setShowFullAvatar(false)}
             className="absolute top-6 right-6 md:top-10 md:right-10 z-[210] bg-white/10 hover:bg-white/30 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl backdrop-blur-md transition-all border border-white/10 group shadow-2xl"
@@ -262,14 +263,12 @@ const AIChatsView: React.FC<AIChatsViewProps> = ({ currentLanguage }) => {
             className="w-full h-full relative flex items-center justify-center animate-in zoom-in duration-300"
             onClick={e => e.stopPropagation()}
           >
-            {/* Image fills screen height, maintains proportions, no borders or rounded corners */}
             <img 
               src={selectedCharacter.avatar} 
               className="h-full w-full object-contain" 
               alt={selectedCharacter.name} 
             />
             
-            {/* Bottom-left info overlay with faded black gradient */}
             <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 text-left bg-gradient-to-t from-black/80 via-black/40 to-transparent animate-in slide-in-from-bottom duration-500 delay-150">
               <h2 className="text-white text-4xl md:text-5xl font-black tracking-tight mb-2 drop-shadow-lg">{selectedCharacter.name}</h2>
               <p className="text-purple-400 font-black uppercase tracking-[0.25em] text-xs md:text-sm drop-shadow-lg">{selectedCharacter.role}</p>

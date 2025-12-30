@@ -1,5 +1,4 @@
 
-
 export type ExerciseType = 'multiple-choice' | 'audio-match' | 'video-lesson' | 'text-translate' | 'word-sort' | 'speech-check';
 
 export type ProficiencyLevel = 1 | 2 | 3 | 4 | 5 | 6;
@@ -87,6 +86,7 @@ export interface CourseData {
   grammar?: GrammarLesson[];
   books?: BookRecommendation[];
   cultureItems?: CultureItem[];
+  aiCharacters?: AICharacter[];
 }
 
 export interface Achievement {

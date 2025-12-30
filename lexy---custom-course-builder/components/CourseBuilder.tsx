@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { CourseData, DictionaryEntry, GrammarLesson, CultureItem, Unit, CultureAsset } from '../types';
+import { CourseData, DictionaryEntry, GrammarLesson, CultureItem, Unit, CultureAsset, AICharacter } from '../types';
 import JSZip from 'jszip';
 
 interface CourseBuilderProps {
@@ -19,7 +19,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
     units: [],
     dictionary: [],
     grammar: [],
-    cultureItems: []
+    cultureItems: [],
+    aiCharacters: []
   });
 
   const updateCourse = (field: keyof CourseData, value: any) => {
@@ -31,6 +32,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
     { title: 'Dictionary', icon: '📖' },
     { title: 'Grammar', icon: '📝' },
     { title: 'Culture', icon: '🌍' },
+    { title: 'AI Chats', icon: '💬' },
     { title: 'Units & Lessons', icon: '🎯' }
   ];
 
@@ -100,6 +102,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
     zip.file("data/grammar.json", JSON.stringify(course.grammar || [], null, 2));
     zip.file("data/culture.json", JSON.stringify(cultureItemsCopy, null, 2));
     zip.file("data/units.json", JSON.stringify(course.units || [], null, 2));
+    zip.file("data/ai_chats.json", JSON.stringify(course.aiCharacters || [], null, 2));
     
     const manifest = {
       format: "lexy-package",
@@ -114,7 +117,8 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
         dictionary: { path: "data/dictionary.json", version: 1 },
         grammar: { path: "data/grammar.json", version: 1 },
         culture: { path: "data/culture.json", version: 1 },
-        units: { path: "data/units.json", version: 1 }
+        units: { path: "data/units.json", version: 1 },
+        ai_chats: { path: "data/ai_chats.json", version: 1 }
       },
       courseId: course.language // Course ID is now the language name
     };
@@ -241,6 +245,13 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
           )}
 
           {step === 4 && (
+            <AICharactersBuilder
+              items={course.aiCharacters || []}
+              onUpdate={(items) => updateCourse('aiCharacters', items)}
+            />
+          )}
+
+          {step === 5 && (
             <div className="space-y-10 animate-in fade-in duration-300 text-center py-20 duo-card bg-gray-50/50 border-dashed border-4 border-gray-200">
                <span className="text-9xl mb-6 inline-block">🎯</span>
                <h2 className="text-4xl font-black text-gray-800">Ready to build units?</h2>
@@ -257,6 +268,7 @@ const CourseBuilder: React.FC<CourseBuilderProps> = ({ onCourseSaved, onCancel, 
 
 /* --- CRUD SUB-COMPONENTS --- */
 
+// Fix: Add DictionaryBuilder sub-component
 const DictionaryBuilder = ({ items, onUpdate }: { items: DictionaryEntry[], onUpdate: (items: DictionaryEntry[]) => void }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<DictionaryEntry | null>(null);
@@ -274,11 +286,14 @@ const DictionaryBuilder = ({ items, onUpdate }: { items: DictionaryEntry[], onUp
   };
 
   const handleSave = () => {
-    if (!form.word || !form.translation) return;
+    if (!form.word || !form.translation) {
+      alert("Please fill in both the word and its translation.");
+      return;
+    }
     if (editingItem) {
       onUpdate(items.map(i => i.id === editingItem.id ? { ...form, id: i.id } as DictionaryEntry : i));
     } else {
-      onUpdate([...items, { ...form, id: `dict-${Date.now()}` } as DictionaryEntry]);
+      onUpdate([...items, { ...form, id: `w-${Date.now()}` } as DictionaryEntry]);
     }
     setShowModal(false);
   };
@@ -287,96 +302,63 @@ const DictionaryBuilder = ({ items, onUpdate }: { items: DictionaryEntry[], onUp
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-4xl font-black text-gray-800 tracking-tight">Dictionary</h2>
-          <p className="text-gray-500 font-bold text-lg">Manage words and phrases in your curriculum.</p>
+          <p className="text-gray-500 font-bold text-lg">Add words and phrases to your course.</p>
         </div>
         <button 
           onClick={() => handleOpen()}
-          className="bg-purple-100 text-purple-700 p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
+          className="bg-purple-100 text-[#ad46ff] p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-[11px]"
         >
-          + ADD NEW ENTRY
+          + ADD ITEM
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.length === 0 ? (
-          <div className="col-span-full py-20 text-center space-y-4 duo-card border-dashed bg-gray-50">
-            <span className="text-6xl">📖</span>
-            <p className="text-gray-400 font-black uppercase tracking-widest text-xs">No entries added yet</p>
-          </div>
-        ) : (
-          items.map(item => (
-            <div key={item.id} className="duo-card p-6 bg-white hover:border-[#ad46ff] transition-all group flex flex-col h-full border-2 border-gray-100">
-              <div className="flex justify-between items-start mb-4">
-                <div className="space-y-1">
-                  <h4 className="text-2xl font-black text-gray-800">{item.word}</h4>
-                  <p className="text-lg font-bold text-[#ad46ff]">{item.translation}</p>
-                </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button onClick={() => handleOpen(item)} className="p-2 text-gray-400 hover:text-blue-500">✏️</button>
-                   <button onClick={() => remove(item.id)} className="p-2 text-gray-400 hover:text-red-500">🗑️</button>
-                </div>
-              </div>
-              {item.definition && <p className="text-sm text-gray-400 font-bold mb-4 line-clamp-2">{item.definition}</p>}
-              {item.isPhrase && <span className="mt-auto px-3 py-1 bg-purple-100 text-[#ad46ff] text-[9px] font-black uppercase tracking-widest rounded-lg w-fit">Phrase</span>}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map(item => (
+          <div key={item.id} className="duo-card p-5 bg-white flex items-center justify-between group border-2 border-gray-100">
+            <div>
+              <h4 className="font-black text-gray-800">{item.word}</h4>
+              <p className="text-[#ad46ff] font-bold text-sm">{item.translation}</p>
             </div>
-          ))
-        )}
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => handleOpen(item)} className="p-2 hover:bg-gray-100 rounded-lg">✏️</button>
+              <button onClick={() => remove(item.id)} className="p-2 hover:bg-red-50 text-red-400 rounded-lg">🗑️</button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
-            <div className="p-8 border-b-2 border-gray-50 flex justify-between items-center">
-               <h3 className="text-2xl font-black text-gray-800">{editingItem ? 'Edit' : 'Add New'} Entry</h3>
-               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 font-black">✕</button>
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-6 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-8 space-y-6 animate-in zoom-in duration-300">
+            <h3 className="text-2xl font-black text-gray-800">{editingItem ? 'Edit' : 'Add'} Dictionary Entry</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Word</label>
+                <input placeholder="Word" className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] bg-gray-50" value={form.word} onChange={e => setForm({...form, word: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Translation</label>
+                <input placeholder="Translation" className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] bg-gray-50" value={form.translation} onChange={e => setForm({...form, translation: e.target.value})} />
+              </div>
             </div>
-            <div className="p-8 space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Original Word</label>
-                  <input 
-                    placeholder="e.g. Bonjour" 
-                    className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50" 
-                    value={form.word}
-                    onChange={e => setForm(prev => ({...prev, word: e.target.value}))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Translation</label>
-                  <input 
-                    placeholder="e.g. Hello" 
-                    className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50" 
-                    value={form.translation}
-                    onChange={e => setForm(prev => ({...prev, translation: e.target.value}))}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Definition (Optional)</label>
-                <textarea 
-                  placeholder="A basic greeting used during the day..." 
-                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] h-24 bg-gray-50" 
-                  value={form.definition}
-                  onChange={e => setForm(prev => ({...prev, definition: e.target.value}))}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                 <button 
-                  onClick={() => setForm(prev => ({...prev, isPhrase: !prev.isPhrase}))}
-                  className={`p-3 px-6 rounded-2xl font-black text-xs border-2 transition-all ${form.isPhrase ? 'bg-purple-100 border-purple-300 text-[#ad46ff]' : 'bg-white border-gray-100 text-gray-400'}`}
-                 >
-                   {form.isPhrase ? '✅ PHRASE MODE' : 'OFFICE MODE'}
-                 </button>
-                 <button 
-                  onClick={handleSave}
-                  className="p-4 px-10 bg-[#ad46ff] text-white rounded-2xl font-black shadow-[0_4px_0_#8439a3]"
-                 >
-                   SAVE ENTRY
-                 </button>
-              </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Definition</label>
+              <textarea placeholder="Definition" className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] h-24 bg-gray-50" value={form.definition} onChange={e => setForm({...form, definition: e.target.value})} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Example</label>
+              <input placeholder="Example Sentence" className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] bg-gray-50" value={form.example} onChange={e => setForm({...form, example: e.target.value})} />
+            </div>
+            <label className="flex items-center gap-3 cursor-pointer p-2">
+              <input type="checkbox" checked={form.isPhrase} onChange={e => setForm({...form, isPhrase: e.target.checked})} className="w-5 h-5 accent-[#ad46ff]" />
+              <span className="font-bold text-gray-600 text-sm">This is a common phrase</span>
+            </label>
+            <div className="flex gap-4 pt-4">
+              <button onClick={handleSave} className="flex-1 p-4 bg-[#ad46ff] text-white rounded-2xl font-black shadow-[0_4px_0_#8439a3] uppercase tracking-widest text-xs">SAVE</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 p-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs">CANCEL</button>
             </div>
           </div>
         </div>
@@ -385,10 +367,12 @@ const DictionaryBuilder = ({ items, onUpdate }: { items: DictionaryEntry[], onUp
   );
 };
 
+// Fix: Add GrammarBuilder sub-component
 const GrammarBuilder = ({ items, onUpdate }: { items: GrammarLesson[], onUpdate: (items: GrammarLesson[]) => void }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<GrammarLesson | null>(null);
   const [form, setForm] = useState<Partial<GrammarLesson>>({ title: '', content: '', examples: [] });
+  const [newExample, setNewExample] = useState('');
 
   const handleOpen = (item?: GrammarLesson) => {
     if (item) {
@@ -402,88 +386,82 @@ const GrammarBuilder = ({ items, onUpdate }: { items: GrammarLesson[], onUpdate:
   };
 
   const handleSave = () => {
-    if (!form.title || !form.content) return;
+    if (!form.title || !form.content) {
+      alert("Please provide both a title and the rule content.");
+      return;
+    }
     if (editingItem) {
       onUpdate(items.map(i => i.id === editingItem.id ? { ...form, id: i.id } as GrammarLesson : i));
     } else {
-      onUpdate([...items, { ...form, id: `gram-${Date.now()}` } as GrammarLesson]);
+      onUpdate([...items, { ...form, id: `g-${Date.now()}` } as GrammarLesson]);
     }
     setShowModal(false);
   };
 
-  const remove = (id: string) => onUpdate(items.filter(i => i.id !== id));
+  const addExample = () => {
+    if (newExample.trim()) {
+      setForm({ ...form, examples: [...(form.examples || []), newExample.trim()] });
+      setNewExample('');
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-4xl font-black text-gray-800 tracking-tight">Grammar Lab</h2>
-          <p className="text-gray-500 font-bold text-lg">Define language rules and provide clear examples.</p>
+          <h2 className="text-4xl font-black text-gray-800 tracking-tight">Grammar</h2>
+          <p className="text-gray-500 font-bold text-lg">Explain the fundamental rules of the language.</p>
         </div>
-        <button 
-          onClick={() => handleOpen()}
-          className="bg-purple-100 text-purple-700 p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
-        >
-          + ADD NEW RULE
-        </button>
+        <button onClick={() => handleOpen()} className="bg-purple-100 text-[#ad46ff] p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 uppercase tracking-widest text-[11px]">+ ADD RULE</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {items.length === 0 ? (
-          <div className="col-span-full py-20 text-center space-y-4 duo-card border-dashed bg-gray-50">
-            <span className="text-6xl">📝</span>
-            <p className="text-gray-400 font-black uppercase tracking-widest text-xs">No rules defined</p>
-          </div>
-        ) : (
-          items.map(item => (
-            <div key={item.id} className="duo-card p-8 bg-white hover:border-[#ad46ff] transition-all group flex flex-col border-2 border-gray-100">
-              <div className="flex justify-between items-start mb-4">
-                <h4 className="text-2xl font-black text-gray-800">{item.title}</h4>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button onClick={() => handleOpen(item)} className="p-2 text-gray-400 hover:text-blue-500">✏️</button>
-                   <button onClick={() => remove(item.id)} className="p-2 text-gray-400 hover:text-red-500">🗑️</button>
-                </div>
-              </div>
-              <p className="text-sm text-gray-500 font-bold leading-relaxed line-clamp-3">{item.content}</p>
+      <div className="space-y-4">
+        {items.map(item => (
+          <div key={item.id} className="duo-card p-6 bg-white flex justify-between items-center group border-2 border-gray-100">
+            <div className="flex-1">
+              <h4 className="text-xl font-black text-gray-800">{item.title}</h4>
+              <p className="text-gray-400 text-sm font-bold line-clamp-1 mt-1">{item.content}</p>
             </div>
-          ))
-        )}
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => handleOpen(item)} className="p-2 hover:bg-gray-100 rounded-lg">✏️</button>
+              <button onClick={() => onUpdate(items.filter(i => i.id !== item.id))} className="p-2 hover:bg-red-50 text-red-400 rounded-lg">🗑️</button>
+            </div>
+          </div>
+        ))}
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
-            <div className="p-8 border-b-2 border-gray-50 flex justify-between items-center">
-               <h3 className="text-2xl font-black text-gray-800">{editingItem ? 'Edit' : 'Add New'} Rule</h3>
-               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 font-black">✕</button>
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-6 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-8 space-y-6 animate-in zoom-in duration-300">
+            <h3 className="text-2xl font-black text-gray-800">{editingItem ? 'Edit' : 'Add'} Grammar Rule</h3>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Rule Title</label>
+              <input placeholder="e.g. Present Tense" className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] font-bold bg-gray-50" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
             </div>
-            <div className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Rule Name</label>
-                <input 
-                  placeholder="e.g. Present Tense, Noun Genders" 
-                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50" 
-                  value={form.title}
-                  onChange={e => setForm(prev => ({...prev, title: e.target.value}))}
-                />
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Rule Content</label>
+              <textarea placeholder="Describe the grammar rule..." className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] h-32 bg-gray-50" value={form.content} onChange={e => setForm({...form, content: e.target.value})} />
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Example Sentences</label>
+              <div className="flex gap-2">
+                <input placeholder="Add a clear example..." className="flex-1 p-3 rounded-xl border-2 border-gray-100 outline-none bg-gray-50" value={newExample} onChange={e => setNewExample(e.target.value)} onKeyDown={e => e.key === 'Enter' && addExample()} />
+                <button onClick={addExample} className="p-3 px-6 bg-[#ad46ff] text-white rounded-xl font-black text-xs uppercase tracking-widest">ADD</button>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Explanation</label>
-                <textarea 
-                  placeholder="Explain how the rule works..." 
-                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] h-40 bg-gray-50" 
-                  value={form.content}
-                  onChange={e => setForm(prev => ({...prev, content: e.target.value}))}
-                />
+              <div className="flex flex-wrap gap-2 pt-2">
+                {form.examples?.map((ex, i) => (
+                  <div key={i} className="bg-purple-50 text-[#ad46ff] p-2 px-3 rounded-lg text-xs font-bold flex items-center gap-2 border border-purple-100">
+                    {ex}
+                    <button onClick={() => setForm({...form, examples: form.examples?.filter((_, idx) => idx !== i)})} className="hover:text-red-500 font-black">✕</button>
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-end">
-                 <button 
-                  onClick={handleSave}
-                  className="p-4 px-10 bg-[#ad46ff] text-white rounded-2xl font-black shadow-[0_4px_0_#8439a3]"
-                 >
-                   SAVE RULE
-                 </button>
-              </div>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <button onClick={handleSave} className="flex-1 p-4 bg-[#ad46ff] text-white rounded-2xl font-black shadow-[0_4px_0_#8439a3] uppercase tracking-widest text-xs">SAVE</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 p-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase tracking-widest text-xs">CANCEL</button>
             </div>
           </div>
         </div>
@@ -492,22 +470,16 @@ const GrammarBuilder = ({ items, onUpdate }: { items: GrammarLesson[], onUpdate:
   );
 };
 
+// Fix: Add CultureBuilder sub-component
 const CultureBuilder = ({ items, onUpdate }: { items: CultureItem[], onUpdate: (items: CultureItem[]) => void }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<CultureItem | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [form, setForm] = useState<Partial<CultureItem>>({ 
-    title: '', 
-    category: 'Famous people', 
-    description: '', 
-    assets: []
-  });
-  
-  const [ytLink, setYtLink] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState<Partial<CultureItem>>({ title: '', category: 'Famous people', description: '', thumbnailUrl: '', assets: [] });
 
   const categories = [
-    'Famous people', 'Art & Masterpieces', 'Books', 'Movies & TV series', 'Music & Artists', 'Folklore & Traditions', 'Icons & Landmarks', 'Religion & Beliefs', 'Festivals'
+    'Famous people', 'Art & Masterpieces', 'Books', 'Movies & TV series',
+    'Music & Artists', 'Folklore & Traditions', 'Icons & Landmarks',
+    'Religion & Beliefs', 'Festivals'
   ];
 
   const handleOpen = (item?: CultureItem) => {
@@ -516,85 +488,187 @@ const CultureBuilder = ({ items, onUpdate }: { items: CultureItem[], onUpdate: (
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ title: '', category: 'Famous people', description: '', assets: [] });
+      setForm({ title: '', category: 'Famous people', description: '', thumbnailUrl: '', assets: [] });
     }
     setShowModal(true);
   };
 
-  const addYtLink = () => {
-    if (!ytLink.trim()) return;
-    const newAsset: CultureAsset = {
-      type: 'youtube',
-      value: ytLink.trim(),
-      name: `YouTube: ${ytLink.split('v=')[1] || ytLink.split('/').pop()}`
-    };
-    setForm(prev => ({ ...prev, assets: [...(prev.assets || []), newAsset] }));
-    setYtLink('');
-  };
-
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const newAssets: CultureAsset[] = [];
-    
-    for (const file of Array.from(files)) {
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-
-      let type: CultureAsset['type'] = 'link';
-      if (file.type.startsWith('image/')) type = 'image';
-      else if (file.type.startsWith('video/')) type = 'video';
-      else if (file.type.startsWith('audio/')) type = 'audio';
-      else if (file.type === 'application/pdf') type = 'pdf';
-
-      newAssets.push({
-        type,
-        value: base64,
-        name: file.name
-      });
+  const handleSave = () => {
+    if (!form.title || !form.description) {
+      alert("Please fill in the title and description.");
+      return;
     }
-    
-    setForm(prev => ({ ...prev, assets: [...(prev.assets || []), ...newAssets] }));
+    if (editingItem) {
+      onUpdate(items.map(i => i.id === editingItem.id ? { ...form, id: i.id } as CultureItem : i));
+    } else {
+      onUpdate([...items, { ...form, id: `c-${Date.now()}` } as CultureItem]);
+    }
+    setShowModal(false);
   };
 
-  const removeAsset = (idx: number) => {
-    setForm(prev => ({
-      ...prev,
-      assets: (prev.assets || []).filter((_, i) => i !== idx)
-    }));
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'thumb' | 'asset', assetIdx?: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      if (type === 'thumb') {
+        setForm({ ...form, thumbnailUrl: base64 });
+      } else if (assetIdx !== undefined) {
+        const newAssets = [...(form.assets || [])];
+        newAssets[assetIdx] = { ...newAssets[assetIdx], value: base64 };
+        setForm({ ...form, assets: newAssets });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-2">
+          <h2 className="text-4xl font-black text-gray-800 tracking-tight">Culture</h2>
+          <p className="text-gray-500 font-bold text-lg">Curate cultural stories, icons, and media galleries.</p>
+        </div>
+        <button onClick={() => handleOpen()} className="bg-purple-100 text-[#ad46ff] p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 uppercase tracking-widest text-[11px]">+ ADD ITEM</button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {items.map(item => (
+          <div key={item.id} className="duo-card overflow-hidden bg-white group border-2 border-gray-100 flex flex-col">
+            <div className="h-40 bg-gray-100 relative overflow-hidden">
+              {item.thumbnailUrl && <img src={item.thumbnailUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="" />}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 backdrop-blur-[2px]">
+                <button onClick={() => handleOpen(item)} className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform">✏️</button>
+                <button onClick={() => onUpdate(items.filter(i => i.id !== item.id))} className="w-10 h-10 bg-white text-red-500 rounded-xl flex items-center justify-center shadow-lg hover:scale-110 transition-transform">🗑️</button>
+              </div>
+            </div>
+            <div className="p-5 space-y-1 flex-1">
+              <h4 className="font-black text-gray-800 truncate text-lg leading-tight">{item.title}</h4>
+              <p className="text-[10px] font-black text-[#ad46ff] uppercase tracking-[0.2em]">{item.category}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-6 backdrop-blur-sm">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-8 space-y-6 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <h3 className="text-2xl font-black text-gray-800">Culture Item Details</h3>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Item Title</label>
+                <input placeholder="e.g. Machu Picchu" className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] bg-gray-50" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Category</label>
+                <select className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] bg-gray-50 font-bold" value={form.category} onChange={e => setForm({...form, category: e.target.value as any})}>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Full Description</label>
+              <textarea placeholder="Write a captivating story or description..." className="w-full p-4 rounded-2xl border-2 border-gray-100 outline-none focus:border-[#ad46ff] h-32 bg-gray-50" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Main Thumbnail</label>
+              <div className="flex gap-6 items-center p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <div className="w-24 h-24 rounded-2xl bg-white overflow-hidden border-2 border-gray-100 flex items-center justify-center shrink-0">
+                  {form.thumbnailUrl ? <img src={form.thumbnailUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-3xl">🖼️</span>}
+                </div>
+                <div className="flex-1 space-y-2">
+                   <p className="text-[10px] font-bold text-gray-400">High-quality square images work best.</p>
+                   <input type="file" accept="image/*" onChange={e => handleFileUpload(e, 'thumb')} className="text-xs font-black text-purple-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-5 pt-4">
+               <div className="flex justify-between items-center border-b-2 border-gray-50 pb-2">
+                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Media Gallery</label>
+                 <button onClick={() => setForm({...form, assets: [...(form.assets || []), { type: 'youtube', name: 'New Media Piece', value: '' }]})} className="bg-purple-50 text-[#ad46ff] p-2 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-purple-100">+ ADD ASSET</button>
+               </div>
+               <div className="space-y-4">
+                 {form.assets?.map((asset, idx) => (
+                   <div key={idx} className="p-6 bg-gray-50 border-2 border-gray-100 rounded-2xl space-y-4 shadow-sm animate-in slide-in-from-top duration-200">
+                     <div className="flex gap-3">
+                       <select className="p-3 bg-white rounded-xl text-xs font-black border-2 border-gray-100 outline-none focus:border-[#ad46ff]" value={asset.type} onChange={e => {
+                         const newAssets = [...(form.assets || [])];
+                         newAssets[idx].type = e.target.value as any;
+                         setForm({...form, assets: newAssets});
+                       }}>
+                         <option value="youtube">YouTube</option>
+                         <option value="image">Image</option>
+                         <option value="video">Video</option>
+                         <option value="audio">Audio</option>
+                         <option value="pdf">PDF</option>
+                         <option value="link">Link</option>
+                       </select>
+                       <input className="flex-1 p-3 bg-white rounded-xl text-xs font-bold border-2 border-gray-100 outline-none focus:border-[#ad46ff]" placeholder="Label (e.g. 'Intro Video')" value={asset.name} onChange={e => {
+                         const newAssets = [...(form.assets || [])];
+                         newAssets[idx].name = e.target.value;
+                         setForm({...form, assets: newAssets});
+                       }} />
+                       <button onClick={() => setForm({...form, assets: form.assets?.filter((_, i) => i !== idx)})} className="w-10 h-10 bg-white text-red-400 rounded-xl flex items-center justify-center hover:bg-red-50 shadow-sm">🗑️</button>
+                     </div>
+                     {asset.type === 'youtube' || asset.type === 'link' ? (
+                       <input className="w-full p-3 bg-white rounded-xl text-xs font-bold border-2 border-gray-100 outline-none focus:border-[#ad46ff]" placeholder="Paste full URL here..." value={asset.value} onChange={e => {
+                         const newAssets = [...(form.assets || [])];
+                         newAssets[idx].value = e.target.value;
+                         setForm({...form, assets: newAssets});
+                       }} />
+                     ) : (
+                       <div className="flex items-center gap-4 p-2 px-4 bg-white rounded-xl border-2 border-gray-100">
+                         <span className="text-xl">📁</span>
+                         <input type="file" onChange={e => handleFileUpload(e, 'asset', idx)} className="text-xs font-black text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-gray-100 file:text-gray-600" />
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+            </div>
+
+            <div className="flex gap-4 pt-8">
+              <button onClick={handleSave} className="flex-1 p-5 bg-[#ad46ff] text-white rounded-[1.5rem] font-black shadow-[0_6px_0_#8439a3] uppercase tracking-widest text-xs">SAVE CHANGES</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 p-5 bg-gray-100 text-gray-400 rounded-[1.5rem] font-black uppercase tracking-widest text-xs">CANCEL</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AICharactersBuilder = ({ items, onUpdate }: { items: AICharacter[], onUpdate: (items: AICharacter[]) => void }) => {
+  const [showModal, setShowModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<AICharacter | null>(null);
+  const [form, setForm] = useState<Partial<AICharacter>>({ name: '', role: '', description: '', personality: '', avatar: '' });
+
+  const handleOpen = (item?: AICharacter) => {
+    if (item) {
+      setEditingItem(item);
+      setForm(item);
+    } else {
+      setEditingItem(null);
+      setForm({ name: '', role: '', description: '', personality: '', avatar: 'https://i.pinimg.com/736x/d1/f4/b3/d1f4b350c48dc8dc2b376c1b73a7b250.jpg' });
+    }
+    setShowModal(true);
   };
 
   const handleSave = () => {
-    if (!form.title) {
-        alert("Please provide a title for the culture item.");
+    if (!form.name || !form.role || !form.personality) {
+        alert("Please fill in Name, Role, and Personality.");
         return;
     }
-    
-    // Find a thumbnail from assets
-    let thumb = 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=400&auto=format&fit=crop';
-    const ytAsset = form.assets?.find(a => a.type === 'youtube');
-    const imgAsset = form.assets?.find(a => a.type === 'image');
-    
-    if (ytAsset) {
-      const vid = ytAsset.value.split('v=')[1] || ytAsset.value.split('/').pop();
-      if (vid) thumb = `https://img.youtube.com/vi/${vid}/maxresdefault.jpg`;
-    } else if (imgAsset) {
-      thumb = imgAsset.value;
-    }
-
-    const newItem = { 
-      ...form, 
-      id: editingItem?.id || `cult-${Date.now()}`, 
-      thumbnailUrl: thumb,
-      assets: form.assets || []
-    } as CultureItem;
-
     if (editingItem) {
-      onUpdate(items.map(i => i.id === editingItem.id ? newItem : i));
+      onUpdate(items.map(i => i.id === editingItem.id ? { ...form, id: i.id } as AICharacter : i));
     } else {
-      onUpdate([...items, newItem]);
+      onUpdate([...items, { ...form, id: `char-${Date.now()}` } as AICharacter]);
     }
     setShowModal(false);
   };
@@ -603,39 +677,39 @@ const CultureBuilder = ({ items, onUpdate }: { items: CultureItem[], onUpdate: (
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
-          <h2 className="text-4xl font-black text-gray-800 tracking-tight">Culture Hub</h2>
-          <p className="text-gray-500 font-bold text-lg">Add multimedia content to make the course engaging.</p>
+          <h2 className="text-4xl font-black text-gray-800 tracking-tight">AI Characters</h2>
+          <p className="text-gray-500 font-bold text-lg">Define custom AI tutors for your course.</p>
         </div>
         <button 
           onClick={() => handleOpen()}
-          className="bg-purple-100 text-purple-700 p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
+          className="bg-purple-100 text-[#ad46ff] p-4 px-8 rounded-2xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-[11px] whitespace-nowrap"
         >
-          + ADD CULTURE ITEM
+          + ADD CHARACTER
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.length === 0 ? (
-          <div className="col-span-full py-20 text-center space-y-4 duo-card border-dashed bg-gray-50">
-            <span className="text-6xl">🌍</span>
-            <p className="text-gray-400 font-black uppercase tracking-widest text-xs">No culture items yet</p>
+          <div className="col-span-full py-24 text-center space-y-6 duo-card border-dashed bg-gray-50 flex flex-col items-center justify-center">
+            <span className="text-7xl opacity-40">💬</span>
+            <p className="text-gray-400 font-black uppercase tracking-widest text-xs">No characters added yet</p>
           </div>
         ) : (
           items.map(item => (
             <div key={item.id} className="duo-card overflow-hidden bg-white hover:border-[#ad46ff] transition-all group flex flex-col border-2 border-gray-100">
-              <div className="h-40 relative bg-gray-100">
-                 <img src={item.thumbnailUrl} className="w-full h-full object-cover" alt={item.title} />
+              <div className="h-40 relative bg-gray-100 overflow-hidden">
+                 <img src={item.avatar} className="w-full h-full object-cover" alt={item.name} />
                  <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); handleOpen(item); }} className="w-8 h-8 bg-white/90 rounded-lg flex items-center justify-center shadow-sm">✏️</button>
-                    <button onClick={(e) => { e.stopPropagation(); remove(item.id); }} className="w-8 h-8 bg-white/90 rounded-lg flex items-center justify-center shadow-sm">🗑️</button>
+                    <button onClick={() => handleOpen(item)} className="w-8 h-8 bg-white/90 rounded-lg flex items-center justify-center shadow-sm hover:scale-110">✏️</button>
+                    <button onClick={() => remove(item.id)} className="w-8 h-8 bg-white/90 rounded-lg flex items-center justify-center shadow-sm hover:scale-110">🗑️</button>
                  </div>
               </div>
-              <div className="p-5 space-y-2">
-                <span className="text-[10px] font-black text-[#ad46ff] uppercase tracking-widest">{item.category}</span>
-                <h4 className="text-xl font-black text-gray-800 truncate">{item.title}</h4>
-                <p className="text-xs text-gray-400 font-bold line-clamp-2">{item.description}</p>
+              <div className="p-5 space-y-1">
+                <h4 className="text-xl font-black text-gray-800 truncate">{item.name}</h4>
+                <p className="text-xs font-black text-[#ad46ff] uppercase tracking-widest">{item.role}</p>
+                <p className="text-xs text-gray-400 font-bold line-clamp-2 mt-2 leading-relaxed">{item.description}</p>
               </div>
             </div>
           ))
@@ -643,114 +717,70 @@ const CultureBuilder = ({ items, onUpdate }: { items: CultureItem[], onUpdate: (
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300 mx-6">
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-300">
             <div className="p-8 border-b-2 border-gray-50 flex justify-between items-center bg-gray-50/30">
-               <h3 className="text-2xl font-black text-gray-800">{editingItem ? 'Edit' : 'Add New'} Item</h3>
-               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 font-black">✕</button>
+               <h3 className="text-2xl font-black text-gray-800">{editingItem ? 'Edit' : 'Add'} Character</h3>
+               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 font-black text-xl">✕</button>
             </div>
             <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Title</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Character Name</label>
                   <input 
-                    placeholder="e.g. History of Paris" 
+                    placeholder="e.g. Socrates" 
                     className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50/50" 
-                    value={form.title}
-                    onChange={e => setForm(prev => ({...prev, title: e.target.value}))}
+                    value={form.name}
+                    onChange={e => setForm(prev => ({...prev, name: e.target.value}))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Category</label>
-                  <select 
-                    className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50/50"
-                    value={form.category}
-                    onChange={e => setForm(prev => ({...prev, category: e.target.value as any}))}
-                  >
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Role/Title</label>
+                  <input 
+                    placeholder="e.g. Ancient Philosopher" 
+                    className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50/50" 
+                    value={form.role}
+                    onChange={e => setForm(prev => ({...prev, role: e.target.value}))}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Description</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Avatar Image URL</label>
+                <input 
+                  placeholder="Paste an image URL..." 
+                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-gray-50/50" 
+                  value={form.avatar}
+                  onChange={e => setForm(prev => ({...prev, avatar: e.target.value}))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Origin Story (Displayed to User)</label>
                 <textarea 
-                  placeholder="Share a fun fact or context..." 
-                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] h-24 bg-gray-50/50" 
+                  placeholder="Describe where this character is from..." 
+                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] h-20 bg-gray-50/50" 
                   value={form.description}
                   onChange={e => setForm(prev => ({...prev, description: e.target.value}))}
                 />
               </div>
 
-              <div className="space-y-4 border-2 border-dashed border-gray-200 p-6 rounded-[2rem] bg-gray-50/50">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1 block mb-2">Media Assets & Links</label>
-                
-                {/* YouTube Link Input */}
-                <div className="flex gap-2 mb-4">
-                  <input 
-                    placeholder="Paste YouTube Link here..." 
-                    className="flex-1 p-4 rounded-xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] bg-white" 
-                    value={ytLink}
-                    onChange={e => setYtLink(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addYtLink()}
-                  />
-                  <button 
-                    onClick={addYtLink}
-                    className="bg-purple-100 text-purple-700 p-4 px-6 rounded-xl font-black shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-[10px]"
-                  >
-                    ADD LINK
-                  </button>
-                </div>
-
-                {/* File Dropzone */}
-                <div 
-                  className={`border-4 border-dashed rounded-3xl p-10 text-center transition-all duration-300 cursor-pointer flex flex-col items-center justify-center space-y-3 ${
-                    isDragging 
-                    ? 'border-[#ad46ff] bg-purple-50 scale-[1.02]' 
-                    : 'border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400'
-                  }`}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-                  onDragEnter={e => { e.preventDefault(); setIsDragging(true); }}
-                  onDragLeave={e => { e.preventDefault(); setIsDragging(false); }}
-                  onDrop={e => { e.preventDefault(); setIsDragging(false); handleFileUpload(e.dataTransfer.files); }}
-                >
-                  <input type="file" multiple ref={fileInputRef} className="hidden" onChange={e => handleFileUpload(e.target.files)} />
-                  <span className={`text-4xl block mb-2 transition-transform duration-300 ${isDragging ? 'scale-125 animate-bounce' : ''}`}>
-                    {isDragging ? '📥' : '📤'}
-                  </span>
-                  <p className={`text-xs font-black uppercase tracking-widest transition-colors ${isDragging ? 'text-[#ad46ff]' : 'text-gray-400'}`}>
-                    {isDragging ? 'Drop to Attach Files' : 'Drag & Drop Files or Click to Browse'}
-                  </p>
-                  <p className="text-[9px] text-gray-300 font-bold mt-1">Videos, Audio, PDFs, Images supported</p>
-                </div>
-
-                {/* Attachments List */}
-                <div className="space-y-2 mt-4">
-                  {(form.assets || []).map((asset, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 px-4 bg-white rounded-xl border-2 border-gray-100 animate-in slide-in-from-left duration-200">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <span className="text-xl">
-                          {asset.type === 'youtube' ? '📺' : asset.type === 'image' ? '🖼️' : asset.type === 'video' ? '🎬' : asset.type === 'audio' ? '🎵' : asset.type === 'pdf' ? '📄' : '🔗'}
-                        </span>
-                        <span className="text-xs font-bold text-gray-600 truncate">{asset.name}</span>
-                      </div>
-                      <button onClick={() => removeAsset(idx)} className="text-gray-300 hover:text-red-500 font-black p-1">✕</button>
-                    </div>
-                  ))}
-                  {(form.assets || []).length === 0 && (
-                    <p className="text-center text-[10px] font-bold text-gray-300 italic py-2">No attachments added yet</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Personality Prompt (AI Instructions)</label>
+                <textarea 
+                  placeholder="Tell the AI how to behave. e.g. 'Speak formally and use metaphors about the sea...'" 
+                  className="w-full p-4 rounded-2xl border-2 border-gray-100 font-bold outline-none focus:border-[#ad46ff] h-32 bg-gray-50/50" 
+                  value={form.personality}
+                  onChange={e => setForm(prev => ({...prev, personality: e.target.value}))}
+                />
               </div>
 
-              {/* Action Button Area */}
-              <div className="flex justify-end pt-6 pb-12">
+              <div className="flex justify-end pt-4 pb-4">
                  <button 
                   onClick={handleSave}
-                  className="p-5 px-12 bg-[#ad46ff] text-white rounded-[1.5rem] font-black shadow-[0_6px_0_#8439a3] hover:bg-[#8439a3] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
+                  className="p-4 px-12 bg-[#ad46ff] text-white rounded-[1.5rem] font-black shadow-[0_6px_0_#8439a3] hover:bg-[#8439a3] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs"
                  >
-                   SAVE CULTURE ITEM
+                   SAVE CHARACTER
                  </button>
               </div>
             </div>
@@ -761,4 +791,5 @@ const CultureBuilder = ({ items, onUpdate }: { items: CultureItem[], onUpdate: (
   );
 };
 
+// Fix: Export CourseBuilder as default
 export default CourseBuilder;

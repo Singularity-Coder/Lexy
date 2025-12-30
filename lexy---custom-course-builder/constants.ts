@@ -117,6 +117,113 @@ const generateDummyLessons = (unitId: string, count: number, startStatus: 'compl
   }));
 };
 
+export const MYTHICAL_CHARACTERS: AICharacter[] = [
+  {
+    id: 'zeus',
+    name: 'Zeus',
+    avatar: 'https://i.pinimg.com/736x/d1/f4/b3/d1f4b350c48dc8dc2b376c1b73a7b250.jpg',
+    role: 'King of Gods',
+    description: 'The thunderbolt-wielding ruler of Mount Olympus.',
+    personality: 'Majestic, authoritative, occasionally dramatic, but wise.'
+  },
+  {
+    id: 'athena',
+    name: 'Athena',
+    avatar: 'https://i.pinimg.com/736x/61/9e/91/619e91505a96e17b9be3108f091b67cb.jpg',
+    role: 'Goddess of Wisdom',
+    description: 'Strategist and protector of civilization.',
+    personality: 'Logical, insightful, encouraging of learners.'
+  },
+  {
+    id: 'odin',
+    name: 'Odin',
+    avatar: 'https://i.pinimg.com/736x/5b/1d/ca/5b1dca1ae91aa485cead3818ce22e2a4.jpg',
+    role: 'All-Father',
+    description: 'Seeker of knowledge and master of runes.',
+    personality: 'Mysterious, deeply philosophical, value-driven.'
+  },
+  {
+    id: 'cleopatra',
+    name: 'Cleopatra',
+    avatar: 'https://i.pinimg.com/736x/3d/89/c6/3d89c62796b132b741d574fc58740f64.jpg',
+    role: 'Pharaoh',
+    description: 'The last active ruler of the Ptolemaic Kingdom of Egypt.',
+    personality: 'Charismatic, brilliant linguist, politically astute.'
+  },
+  {
+    id: 'da_vinci',
+    name: 'Leonardo da Vinci',
+    avatar: 'https://i.pinimg.com/736x/38/7e/01/387e0126b1205b5c40de13adad0fc90c.jpg',
+    role: 'Renaissance Master',
+    description: 'Polymath, painter, inventor, and anatomist.',
+    personality: 'Curious, imaginative, constantly sketching ideas.'
+  },
+  {
+    id: 'napoleon',
+    name: 'Napoleon Bonaparte',
+    avatar: 'https://i.pinimg.com/736x/8b/b3/f6/8bb3f61671ce6a14f415d2b19bb51e65.jpg',
+    role: 'Emperor',
+    description: 'Master strategist and French leader who shaped modern Europe.',
+    personality: 'Ambitious, formal, confident, and highly articulate.'
+  },
+  {
+    id: 'valkyrie',
+    name: 'Valkyrie',
+    avatar: 'https://i.pinimg.com/736x/fb/48/ef/fb48ef1722d3e5a229161aea85755cfa.jpg',
+    role: 'Chooser of Slain',
+    description: 'Shield-maiden of Valhalla who guides heroes to the afterlife.',
+    personality: 'Fearless, ethereal, fierce, and deeply loyal.'
+  },
+  {
+    id: 'joan',
+    name: 'Joan of Arc',
+    avatar: 'https://i.pinimg.com/736x/6f/fd/53/6ffd535445915a4fcc2b464edcae7e38.jpg',
+    role: 'Saint of Orléans',
+    description: 'The young peasant girl who led the French army to victory.',
+    personality: 'Pious, determined, inspiring, and remarkably brave.'
+  },
+  {
+    id: 'king_arthur',
+    name: 'King Arthur',
+    avatar: 'https://i.pinimg.com/736x/25/95/0c/25950cda0b3171ad8c0f65ce7e165d3c.jpg',
+    role: 'The High King',
+    description: 'The legendary sovereign of Camelot and wielder of Excalibur.',
+    personality: 'Noble, chivalrous, determined, and deeply just.'
+  },
+  {
+    id: 'merlin',
+    name: 'Merlin',
+    avatar: 'https://i.pinimg.com/736x/fe/3e/df/fe3edf9ece39a05d51c812e5542520b9.jpg',
+    role: 'Wizard of Britain',
+    description: 'The master of prophecy, magic, and advisor to the Round Table.',
+    personality: 'Enigmatic, eccentric, incredibly wise, and multi-faceted.'
+  },
+  {
+    id: 'robin_hood',
+    name: 'Robin Hood',
+    avatar: 'https://i.pinimg.com/736x/ea/59/5b/ea595b7b44e2669606143129920c5ba7.jpg',
+    role: 'Legendary Outlaw',
+    description: 'The heroic archer of Sherwood Forest who steals from the rich.',
+    personality: 'Merry, defiant, highly skilled, and compassionate.'
+  },
+  {
+    id: 'black_shuck',
+    name: 'Black Shuck',
+    avatar: 'https://i.pinimg.com/736x/cb/8a/26/cb8a261f8141c5cd5443611176319fee.jpg',
+    role: 'Spectral Hound',
+    description: 'The terrifying ghostly black dog that haunts the English coastline.',
+    personality: 'Ominous, growling, ancient, yet strangely poetic in speech.'
+  },
+  {
+    id: 'puck',
+    name: 'Puck',
+    avatar: 'https://i.pinimg.com/736x/b3/8d/c4/b38dc4529e3e6f4c0b535927dac9c15a.jpg',
+    role: 'Trickster Sprite',
+    description: 'Also known as Robin Goodfellow, a mischievous nature spirit.',
+    personality: 'Prankish, lighthearted, fast-talking, and easily amused.'
+  }
+];
+
 export const DUMMY_COURSE: CourseData = {
   id: "English", // ID is now strictly the language name
   courseTitle: "English Mastery",
@@ -366,112 +473,6 @@ export const DUMMY_COURSE: CourseData = {
       thumbnailUrl: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=800&auto=format&fit=crop',
       platform: 'Festival'
     }
-  ]
+  ],
+  aiCharacters: MYTHICAL_CHARACTERS
 };
-
-export const MYTHICAL_CHARACTERS: AICharacter[] = [
-  {
-    id: 'zeus',
-    name: 'Zeus',
-    avatar: 'https://i.pinimg.com/736x/d1/f4/b3/d1f4b350c48dc8dc2b376c1b73a7b250.jpg',
-    role: 'King of Gods',
-    description: 'The thunderbolt-wielding ruler of Mount Olympus.',
-    personality: 'Majestic, authoritative, occasionally dramatic, but wise.'
-  },
-  {
-    id: 'athena',
-    name: 'Athena',
-    avatar: 'https://i.pinimg.com/736x/61/9e/91/619e91505a96e17b9be3108f091b67cb.jpg',
-    role: 'Goddess of Wisdom',
-    description: 'Strategist and protector of civilization.',
-    personality: 'Logical, insightful, encouraging of learners.'
-  },
-  {
-    id: 'odin',
-    name: 'Odin',
-    avatar: 'https://i.pinimg.com/736x/5b/1d/ca/5b1dca1ae91aa485cead3818ce22e2a4.jpg',
-    role: 'All-Father',
-    description: 'Seeker of knowledge and master of runes.',
-    personality: 'Mysterious, deeply philosophical, value-driven.'
-  },
-  {
-    id: 'cleopatra',
-    name: 'Cleopatra',
-    avatar: 'https://i.pinimg.com/736x/3d/89/c6/3d89c62796b132b741d574fc58740f64.jpg',
-    role: 'Pharaoh',
-    description: 'The last active ruler of the Ptolemaic Kingdom of Egypt.',
-    personality: 'Charismatic, brilliant linguist, politically astute.'
-  },
-  {
-    id: 'da_vinci',
-    name: 'Leonardo da Vinci',
-    avatar: 'https://i.pinimg.com/736x/38/7e/01/387e0126b1205b5c40de13adad0fc90c.jpg',
-    role: 'Renaissance Master',
-    description: 'Polymath, painter, inventor, and anatomist.',
-    personality: 'Curious, imaginative, constantly sketching ideas.'
-  },
-  {
-    id: 'napoleon',
-    name: 'Napoleon Bonaparte',
-    avatar: 'https://i.pinimg.com/736x/8b/b3/f6/8bb3f61671ce6a14f415d2b19bb51e65.jpg',
-    role: 'Emperor',
-    description: 'Master strategist and French leader who shaped modern Europe.',
-    personality: 'Ambitious, formal, confident, and highly articulate.'
-  },
-  {
-    id: 'valkyrie',
-    name: 'Valkyrie',
-    avatar: 'https://i.pinimg.com/736x/fb/48/ef/fb48ef1722d3e5a229161aea85755cfa.jpg',
-    role: 'Chooser of Slain',
-    description: 'Shield-maiden of Valhalla who guides heroes to the afterlife.',
-    personality: 'Fearless, ethereal, fierce, and deeply loyal.'
-  },
-  {
-    id: 'joan',
-    name: 'Joan of Arc',
-    avatar: 'https://i.pinimg.com/736x/6f/fd/53/6ffd535445915a4fcc2b464edcae7e38.jpg',
-    role: 'Saint of Orléans',
-    description: 'The young peasant girl who led the French army to victory.',
-    personality: 'Pious, determined, inspiring, and remarkably brave.'
-  },
-  {
-    id: 'king_arthur',
-    name: 'King Arthur',
-    avatar: 'https://i.pinimg.com/736x/25/95/0c/25950cda0b3171ad8c0f65ce7e165d3c.jpg',
-    role: 'The High King',
-    description: 'The legendary sovereign of Camelot and wielder of Excalibur.',
-    personality: 'Noble, chivalrous, determined, and deeply just.'
-  },
-  {
-    id: 'merlin',
-    name: 'Merlin',
-    avatar: 'https://i.pinimg.com/736x/fe/3e/df/fe3edf9ece39a05d51c812e5542520b9.jpg',
-    role: 'Wizard of Britain',
-    description: 'The master of prophecy, magic, and advisor to the Round Table.',
-    personality: 'Enigmatic, eccentric, incredibly wise, and multi-faceted.'
-  },
-  {
-    id: 'robin_hood',
-    name: 'Robin Hood',
-    avatar: 'https://i.pinimg.com/736x/ea/59/5b/ea595b7b44e2669606143129920c5ba7.jpg',
-    role: 'Legendary Outlaw',
-    description: 'The heroic archer of Sherwood Forest who steals from the rich.',
-    personality: 'Merry, defiant, highly skilled, and compassionate.'
-  },
-  {
-    id: 'black_shuck',
-    name: 'Black Shuck',
-    avatar: 'https://i.pinimg.com/736x/cb/8a/26/cb8a261f8141c5cd5443611176319fee.jpg',
-    role: 'Spectral Hound',
-    description: 'The terrifying ghostly black dog that haunts the English coastline.',
-    personality: 'Ominous, growling, ancient, yet strangely poetic in speech.'
-  },
-  {
-    id: 'puck',
-    name: 'Puck',
-    avatar: 'https://i.pinimg.com/736x/b3/8d/c4/b38dc4529e3e6f4c0b535927dac9c15a.jpg',
-    role: 'Trickster Sprite',
-    description: 'Also known as Robin Goodfellow, a mischievous nature spirit.',
-    personality: 'Prankish, lighthearted, fast-talking, and easily amused.'
-  }
-];
