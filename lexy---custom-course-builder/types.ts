@@ -30,6 +30,13 @@ export interface Unit {
   level?: ProficiencyLevel;
 }
 
+export interface AlphabetItem {
+  id: string;
+  character: string;
+  phonetic?: string;
+  audioUrl?: string; // base64
+}
+
 export interface DictionaryEntry {
   id: string;
   word: string;
@@ -68,10 +75,8 @@ export interface CultureItem {
   subtitle?: string;
   category: 'Famous people' | 'Art & Masterpieces' | 'Books' | 'Movies & TV series' | 'Music & Artists' | 'Folklore & Traditions' | 'Icons & Landmarks' | 'Religion & Beliefs' | 'Festivals';
   description: string;
-  // Made assets optional to support both flat structure (legacy) and asset-based structure
   assets?: CultureAsset[];
   thumbnailUrl: string;
-  // Added properties to satisfy constants.ts dummy data and CultureView usage
   type?: 'video' | 'audio' | 'pdf' | 'image' | 'youtube' | 'link';
   mediaUrl?: string;
   platform?: string;
@@ -82,6 +87,7 @@ export interface CourseData {
   courseTitle: string;
   language: string;
   units: Unit[];
+  alphabet?: AlphabetItem[];
   dictionary?: DictionaryEntry[];
   grammar?: GrammarLesson[];
   books?: BookRecommendation[];
@@ -136,7 +142,6 @@ export interface UserStats {
   selectedMascotId: string;
   brandFont: string;
   notifications: NotificationSettings;
-  // New Stats
   lessonsCompleted: number;
   totalTimeMinutes: number;
   accuracy: number; // percentage

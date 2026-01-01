@@ -92,7 +92,6 @@ const App: React.FC = () => {
 
   const handleCourseLoaded = (newCourse: CourseData, newMediaMap: Map<string, string>, originalId?: string) => {
     setAvailableCourses(prev => {
-      // 1. If we are replacing an existing course (Overwrite during import or Rename during edit)
       const targetIdToFind = originalId || newCourse.id;
       const existingIdx = prev.findIndex(c => targetIdToFind && c.id === targetIdToFind);
 
@@ -101,15 +100,14 @@ const App: React.FC = () => {
         updated[existingIdx] = newCourse;
         return updated;
       }
-      
-      // 2. If it's a completely new language/ID
       return [...prev, newCourse];
     });
 
-    // 2. Switch to the newly loaded/updated course
+    const courseLevel = newCourse.units?.[0]?.level || 1;
     setStats(prev => ({ 
       ...prev, 
-      currentCourseId: newCourse.id
+      currentCourseId: newCourse.id,
+      proficiencyLevel: courseLevel as ProficiencyLevel
     }));
     
     setMediaMap(newMediaMap);
@@ -118,7 +116,14 @@ const App: React.FC = () => {
   };
 
   const handleCourseSwitch = (courseId: string) => {
-    setStats(prev => ({ ...prev, currentCourseId: courseId }));
+    const targetCourse = availableCourses.find(c => c.id === courseId);
+    const courseLevel = targetCourse?.units?.[0]?.level || 1;
+    
+    setStats(prev => ({ 
+      ...prev, 
+      currentCourseId: courseId,
+      proficiencyLevel: courseLevel as ProficiencyLevel
+    }));
     setActiveView('home');
   };
 
@@ -129,11 +134,6 @@ const App: React.FC = () => {
 
   const handleStartLesson = (lesson: Lesson) => {
     setActiveLesson(lesson);
-  };
-
-  const handleUpdateProficiency = (newLevel: ProficiencyLevel) => {
-    setStats(prev => ({ ...prev, proficiencyLevel: newLevel }));
-    setActiveView('home');
   };
 
   const handleUpdateMascot = (mascotId: string) => {
@@ -294,6 +294,7 @@ const App: React.FC = () => {
 
         {activeView === 'vocabulary' && (
           <VocabularyView 
+            alphabet={course.alphabet}
             dictionary={course.dictionary} 
             savedWordIds={stats.savedWordIds[course.language] || []}
             onToggleSave={handleToggleSaveWord}
@@ -325,7 +326,6 @@ const App: React.FC = () => {
             onCourseLoaded={handleCourseLoaded} 
             onResetProgress={handleResetProgress}
             currentProficiency={stats.proficiencyLevel}
-            onUpdateProficiency={handleUpdateProficiency}
             currentCourseId={stats.currentCourseId}
             selectedMascotId={stats.selectedMascotId}
             onUpdateMascot={handleUpdateMascot}
@@ -341,7 +341,6 @@ const App: React.FC = () => {
         {activeLesson && <LessonSession lesson={activeLesson} mediaMap={mediaMap} onFinish={handleFinishLesson} onQuit={() => setActiveLesson(null)} />}
       </main>
 
-      {/* GLOBAL FULL-SCREEN OVERLAYS */}
       {selectedCultureItem && (
         <CultureDetailView 
           item={selectedCultureItem} 

@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Language → Unicode chars (by script)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    label { display: grid; gap: 6px; font-size: 14px; }
+    select, input, button, textarea { font: inherit; }
+    select, input { padding: 8px; min-width: 220px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    textarea { width: 100%; height: 280px; padding: 10px; white-space: pre-wrap; }
+    .meta { margin: 10px 0; font-size: 13px; opacity: .85; }
+    .warn { color: #8a5a00; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#f2f2f2; margin-left:6px; }
+  </style>
+</head>
+<body>
+  <h2>Language → Unicode characters (by script)</h2>
+
+  <div class="row">
+    <label>
+      Choose language
+      <select id="langSelect"></select>
+    </label>
+
+    <label>
+      Or type language name
+      <input id="langInput" placeholder="e.g., Hindi, Arabic, Japanese" />
+    </label>
+
+    <label>
+      Include
+      <select id="categoryMode">
+        <option value="ALL">All characters in script ranges</option>
+        <option value="LM" selected>Letters + Marks (recommended)</option>
+        <option value="L">Letters only</option>
+        <option value="LN">Letters + Numbers</option>
+      </select>
+    </label>
+
+    <label>
+      Max characters (safety for huge scripts)
+      <input id="maxChars" type="number" min="100" step="100" value="5000" />
+    </label>
+
+    <button id="genBtn">Generate</button>
+    <button id="copyBtn">Copy</button>
+  </div>
+
+  <div class="meta" id="meta"></div>
+  <textarea id="out" spellcheck="false"></textarea>
+
+  <script>
+    // ✅ Requires a modern JS engine that supports Unicode property escapes: \p{...} (ES2018+)
+
+    // 1) Language -> script(s) mapping.
+    //    Edit/add languages here. Languages aren't perfectly defined by scripts; this is a practical mapping.
+    const LANGUAGE_TO_SCRIPTS = {
+      "English": ["Latin"],
+      "French": ["Latin"],
+      "German": ["Latin"],
+      "Spanish": ["Latin"],
+      "Vietnamese": ["Latin"],
+
+      "Russian": ["Cyrillic"],
+      "Ukrainian": ["Cyrillic"],
+      "Bulgarian": ["Cyrillic"],
+      "Serbian (Cyrillic)": ["Cyrillic"],
+
+      "Greek": ["Greek"],
+
+      "Hindi": ["Devanagari"],
+      "Marathi": ["Devanagari"],
+      "Nepali": ["Devanagari"],
+      "Sanskrit": ["Devanagari"],
+
+      "Bengali": ["Bengali"],
+      "Punjabi (Gurmukhi)": ["Gurmukhi"],
+      "Gujarati": ["Gujarati"],
+      "Odia": ["Oriya"],
+      "Tamil": ["Tamil"],
+      "Telugu": ["Telugu"],
+      "Kannada": ["Kannada"],
+      "Malayalam": ["Malayalam"],
+      "Sinhala": ["Sinhala"],
+
+      "Arabic": ["Arabic"],
+      "Persian": ["Arabic"],
+      "Urdu": ["Arabic"],
+      "Hebrew": ["Hebrew"],
+
+      "Thai": ["Thai"],
+      "Lao": ["Lao"],
+      "Tibetan": ["Tibetan"],
+      "Burmese (Myanmar)": ["Myanmar"],
+
+      "Armenian": ["Armenian"],
+      "Georgian": ["Georgian"],
+      "Amharic (Ethiopic)": ["Ethiopic"],
+
+      "Japanese": ["Hiragana", "Katakana", "Han"],
+      "Chinese": ["Han"],
+      "Korean": ["Hangul", "Han"]
+    };
+
+    // 2) Script -> Unicode ranges (block-ish ranges). We still filter by Script property to keep it clean.
+    //    Note: Han ranges are enormous, so Max characters is important.
+    const SCRIPT_RANGES = {
+      Latin: [
+        [0x0000, 0x007F],   // Basic Latin
+        [0x0080, 0x00FF],   // Latin-1 Supplement
+        [0x0100, 0x017F],   // Latin Extended-A
+        [0x0180, 0x024F],   // Latin Extended-B
+        [0x1E00, 0x1EFF],   // Latin Extended Additional
+        [0x2C60, 0x2C7F],   // Latin Extended-C
+        [0xA720, 0xA7FF],   // Latin Extended-D
+        [0xAB30, 0xAB6F],   // Latin Extended-E
+        [0xFB00, 0xFB4F],   // Alphabetic Presentation Forms (includes Latin ligatures)
+        [0xFF00, 0xFFEF],   // Halfwidth/Fullwidth (includes some Latin)
+      ],
+      Greek: [
+        [0x0370, 0x03FF],
+        [0x1F00, 0x1FFF],
+      ],
+      Cyrillic: [
+        [0x0400, 0x04FF],
+        [0x0500, 0x052F],
+        [0x1C80, 0x1C8F],
+        [0x2DE0, 0x2DFF],
+        [0xA640, 0xA69F],
+      ],
+      Arabic: [
+        [0x0600, 0x06FF],
+        [0x0750, 0x077F],
+        [0x08A0, 0x08FF],
+        [0xFB50, 0xFDFF],
+        [0xFE70, 0xFEFF],
+      ],
+      Devanagari: [
+        [0x0900, 0x097F],
+        [0xA8E0, 0xA8FF],
+        [0x11B00, 0x11B5F], // Devanagari Extended-A
+      ],
+      Bengali: [[0x0980, 0x09FF]],
+      Gurmukhi: [[0x0A00, 0x0A7F]],
+      Gujarati: [[0x0A80, 0x0AFF]],
+      Oriya: [[0x0B00, 0x0B7F]],
+      Tamil: [[0x0B80, 0x0BFF]],
+      Telugu: [[0x0C00, 0x0C7F]],
+      Kannada: [[0x0C80, 0x0CFF]],
+      Malayalam: [[0x0D00, 0x0D7F]],
+      Sinhala: [[0x0D80, 0x0DFF]],
+      Thai: [[0x0E00, 0x0E7F]],
+      Lao: [[0x0E80, 0x0EFF]],
+      Tibetan: [[0x0F00, 0x0FFF]],
+      Myanmar: [[0x1000, 0x109F]],
+      Hebrew: [[0x0590, 0x05FF]],
+      Armenian: [[0x0530, 0x058F]],
+      Georgian: [
+        [0x10A0, 0x10FF],
+        [0x1C90, 0x1CBF],
+      ],
+      Ethiopic: [
+        [0x1200, 0x137F],
+        [0x1380, 0x139F],
+        [0x2D80, 0x2DDF],
+      ],
+      Hangul: [
+        [0x1100, 0x11FF],
+        [0x3130, 0x318F],
+        [0xA960, 0xA97F],
+        [0xAC00, 0xD7AF],
+        [0xD7B0, 0xD7FF],
+      ],
+      Hiragana: [[0x3040, 0x309F]],
+      Katakana: [
+        [0x30A0, 0x30FF],
+        [0x31F0, 0x31FF],
+        [0xFF65, 0xFF9F],
+      ],
+      Han: [
+        [0x3400, 0x4DBF],
+        [0x4E00, 0x9FFF],
+        [0xF900, 0xFAFF],
+        [0x20000, 0x2A6DF],
+        [0x2A700, 0x2B73F],
+        [0x2B740, 0x2B81F],
+        [0x2B820, 0x2CEAF],
+        [0x2CEB0, 0x2EBEF],
+        [0x30000, 0x3134F],
+      ],
+    };
+
+    // --- UI setup ---
+    const langSelect = document.getElementById("langSelect");
+    const langInput = document.getElementById("langInput");
+    const categoryMode = document.getElementById("categoryMode");
+    const maxCharsEl = document.getElementById("maxChars");
+    const out = document.getElementById("out");
+    const meta = document.getElementById("meta");
+
+    const languageNames = Object.keys(LANGUAGE_TO_SCRIPTS).sort((a,b)=>a.localeCompare(b));
+    for (const name of languageNames) {
+      const opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      langSelect.appendChild(opt);
+    }
+    langSelect.value = "Hindi";
+
+    function normalizeLang(s) {
+      return (s || "").trim().toLowerCase();
+    }
+
+    function findLanguageKey(userText) {
+      const n = normalizeLang(userText);
+      if (!n) return null;
+
+      // exact match (case-insensitive)
+      for (const k of languageNames) {
+        if (normalizeLang(k) === n) return k;
+      }
+      // contains match fallback
+      for (const k of languageNames) {
+        if (normalizeLang(k).includes(n) || n.includes(normalizeLang(k))) return k;
+      }
+      return null;
+    }
+
+    function makeScriptRegex(scriptName) {
+      return new RegExp(`\\p{Script=${scriptName}}`, "u");
+    }
+
+    function categoryTest(mode, ch) {
+      if (mode === "ALL") return true;
+      if (mode === "L") return /\p{L}/u.test(ch);
+      if (mode === "LM") return /[\p{L}\p{M}]/u.test(ch);
+      if (mode === "LN") return /[\p{L}\p{N}]/u.test(ch);
+      return true;
+    }
+
+    function generateCharsForScripts(scripts, mode, maxChars) {
+      const result = [];
+      const seen = new Set();
+
+      for (const script of scripts) {
+        const ranges = SCRIPT_RANGES[script];
+        if (!ranges) continue;
+
+        const scriptRe = makeScriptRegex(script);
+
+        for (const [start, end] of ranges) {
+          for (let cp = start; cp <= end; cp++) {
+            // Skip surrogate code points (not valid scalar values)
+            if (cp >= 0xD800 && cp <= 0xDFFF) continue;
+
+            const ch = String.fromCodePoint(cp);
+
+            if (!scriptRe.test(ch)) continue;         // keep chars that truly belong to the script
+            if (!categoryTest(mode, ch)) continue;    // apply category filter
+
+            if (!seen.has(ch)) {
+              seen.add(ch);
+              result.push(ch);
+              if (result.length >= maxChars) {
+                return { chars: result.join(""), truncated: true };
+              }
+            }
+          }
+        }
+      }
+      return { chars: result.join(""), truncated: false };
+    }
+
+    function getSelectedLanguage() {
+      const typed = findLanguageKey(langInput.value);
+      return typed || langSelect.value;
+    }
+
+    function render() {
+      const lang = getSelectedLanguage();
+      const scripts = LANGUAGE_TO_SCRIPTS[lang] || [];
+      const mode = categoryMode.value;
+      const maxChars = Math.max(100, Number(maxCharsEl.value || 5000));
+
+      const { chars, truncated } = generateCharsForScripts(scripts, mode, maxChars);
+
+      out.value = chars;
+
+      const scriptLabel = scripts.length ? scripts.join(", ") : "(none)";
+      const count = [...chars].length; // counts codepoints (good enough for this purpose)
+
+      const warn = truncated
+        ? `<span class="pill warn">truncated at ${maxChars}</span>`
+        : `<span class="pill">full</span>`;
+
+      meta.innerHTML =
+        `Language: <b>${lang}</b> · Scripts: <b>${scriptLabel}</b> · Count: <b>${count}</b> ${warn}`;
+    }
+
+    document.getElementById("genBtn").addEventListener("click", render);
+
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(out.value);
+        meta.innerHTML += ` <span class="pill">copied</span>`;
+      } catch {
+        meta.innerHTML += ` <span class="pill warn">copy failed (use Ctrl/Cmd+C)</span>`;
+      }
+    });
+
+    // Keep dropdown + input friendly: typing overrides dropdown if it matches
+    langInput.addEventListener("input", () => {
+      const k = findLanguageKey(langInput.value);
+      if (k) langSelect.value = k;
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -11,7 +11,6 @@ interface SettingsViewProps {
   onCourseLoaded: (course: CourseData, mediaMap: Map<string, string>) => void;
   onResetProgress: () => void;
   currentProficiency: ProficiencyLevel;
-  onUpdateProficiency: (level: ProficiencyLevel) => void;
   currentCourseId: string;
   selectedMascotId: string;
   onUpdateMascot: (mascotId: string) => void;
@@ -29,7 +28,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   onCourseLoaded, 
   onResetProgress, 
   currentProficiency, 
-  onUpdateProficiency,
   currentCourseId,
   selectedMascotId,
   onUpdateMascot,
@@ -42,7 +40,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
   const [isFontModalOpen, setIsFontModalOpen] = useState(false);
-  const [isStageModalOpen, setIsStageModalOpen] = useState(false);
   const [isMascotModalOpen, setIsMascotModalOpen] = useState(false);
 
   const currentLevelInfo = PROFICIENCY_LEVELS.find(l => l.level === currentProficiency) || PROFICIENCY_LEVELS[0];
@@ -59,25 +56,36 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
   const LanguageSelector = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 pb-8">
-      {availableCourses.map((course) => (
-        <button
-          key={course.id}
-          onClick={() => {
-            onCourseSwitch(course.id);
-            setIsLanguageModalOpen(false);
-          }}
-          className={`p-5 rounded-2xl flex items-center transition-all group ${
-            currentCourseId === course.id 
-              ? 'bg-purple-100 border-2 border-purple-200 text-purple-700 shadow-[0_4px_0_#c4b5fd]' 
-              : 'bg-white border-2 border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
-          }`}
-        >
-          <div className="text-left">
-            <p className="font-black text-gray-800">{course.language}</p>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{course.courseTitle}</p>
-          </div>
-        </button>
-      ))}
+      {availableCourses.map((course) => {
+        // Derive level from the first unit or default to current user proficiency for display if unit level missing
+        const courseLevel = course.units?.[0]?.level || 1;
+        const levelInfo = PROFICIENCY_LEVELS.find(l => l.level === courseLevel) || PROFICIENCY_LEVELS[0];
+
+        return (
+          <button
+            key={course.id}
+            onClick={() => {
+              onCourseSwitch(course.id);
+              setIsLanguageModalOpen(false);
+            }}
+            className={`p-4 rounded-2xl flex items-center gap-4 transition-all group ${
+              currentCourseId === course.id 
+                ? 'bg-purple-100 border-2 border-purple-200 text-purple-700 shadow-[0_4px_0_#c4b5fd]' 
+                : 'bg-white border-2 border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
+            }`}
+          >
+            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white shadow-sm bg-white shrink-0">
+              <img src={levelInfo.imageUrl} className="w-full h-full object-cover" alt={levelInfo.name} />
+            </div>
+            <div className="text-left overflow-hidden">
+              <p className="font-black text-gray-800 truncate">{course.language}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider truncate">
+                {levelInfo.name}
+              </p>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -105,41 +113,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           <p className={`text-[10px] font-black uppercase tracking-widest ${brandFont === opt.id ? 'text-purple-700' : 'text-gray-400'}`}>
             {opt.name}
           </p>
-        </button>
-      ))}
-    </div>
-  );
-
-  const StageSelector = () => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 px-4 pb-8 pt-2">
-      {PROFICIENCY_LEVELS.map((info) => (
-        <button
-          key={info.level}
-          onClick={() => {
-            onUpdateProficiency(info.level);
-            setIsStageModalOpen(false);
-          }}
-          className={`flex flex-col items-stretch text-center rounded-[2.5rem] transition-all transform active:scale-95 group overflow-hidden border-2 ${
-            currentProficiency === info.level
-              ? 'bg-purple-100 border-purple-200 text-purple-700 shadow-[0_4px_0_#c4b5fd]'
-              : 'bg-white border-gray-100 hover:border-gray-300 shadow-[0_4px_0_#e5e5e5]'
-          }`}
-        >
-          <div className="aspect-square w-full overflow-hidden bg-gray-50">
-            <img 
-              src={info.imageUrl} 
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-              alt={info.name} 
-            />
-          </div>
-          <div className="p-4 md:p-5 space-y-1 bg-inherit">
-            <h3 className={`font-black text-sm md:text-base ${currentProficiency === info.level ? 'text-purple-700' : 'text-gray-800'}`}>
-              {info.name}
-            </h3>
-            <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">
-              {info.description}
-            </p>
-          </div>
         </button>
       ))}
     </div>
@@ -194,16 +167,24 @@ const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
           
           <div className="duo-card p-6 bg-purple-50/10 border-purple-50 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center justify-between flex-1 w-full gap-4">
-              <div className="flex items-center">
-                <h3 className="text-2xl font-black text-[#ad46ff]">
+            <div className="flex items-center flex-1 w-full gap-6">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-sm bg-white shrink-0">
+                <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
+              </div>
+
+              <div className="flex-1 space-y-0.5">
+                <h3 className="text-2xl font-black text-[#ad46ff] leading-none">
                   {currentActiveCourse?.language || 'None'}
                 </h3>
+                <p className="text-sm font-bold text-gray-400">
+                  {currentLevelInfo.name}
+                </p>
               </div>
+
               <button 
                 type="button"
                 onClick={handleEditClick}
-                className="bg-white border-2 border-gray-200 p-4 px-8 rounded-2xl font-black text-gray-500 hover:bg-gray-100 shadow-[0_4px_0_#e5e5e5] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs relative z-10"
+                className="bg-white border-2 border-gray-100 p-4 px-8 rounded-2xl font-black text-gray-500 hover:bg-gray-100 shadow-[0_4px_0_#e5e5e5] active:translate-y-1 active:shadow-none transition-all uppercase tracking-widest text-xs relative z-10"
               >
                 EDIT
               </button>
@@ -213,32 +194,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
               className="w-full md:w-auto p-4 px-8 rounded-2xl font-black bg-purple-100 text-purple-700 shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 transition-all active:translate-y-1 active:shadow-none uppercase tracking-widest text-xs"
             >
               SWITCH LANGUAGE
-            </button>
-          </div>
-        </section>
-
-        {/* Learning Stage */}
-        <section className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-black text-gray-700 uppercase tracking-widest">Learning Stage</h2>
-            <div className="h-1 flex-1 bg-gray-100 rounded-full"></div>
-          </div>
-          
-          <div className="duo-card p-6 bg-purple-50/10 border-purple-50 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-sm bg-white shrink-0">
-                <img src={currentLevelInfo.imageUrl} className="w-full h-full object-cover" alt={currentLevelInfo.name} />
-              </div>
-              <div className="flex flex-col">
-                <h3 className="text-2xl font-black text-[#ad46ff]">{currentLevelInfo.name}</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{currentLevelInfo.description}</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setIsStageModalOpen(true)}
-              className="w-full md:w-auto p-4 px-8 rounded-2xl font-black bg-purple-100 text-purple-700 shadow-[0_4px_0_#c4b5fd] hover:bg-purple-200 transition-all active:translate-y-1 active:shadow-none uppercase tracking-widest text-xs"
-            >
-              CHANGE STAGE
             </button>
           </div>
         </section>
@@ -428,26 +383,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div className="max-h-[60vh] overflow-y-auto scrollbar-hide">
               <FontSelector />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stage Selection Modal */}
-      {isStageModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
-          <div className="bg-white rounded-[3rem] p-8 max-w-4xl w-full space-y-3 shadow-2xl animate-in zoom-in duration-300 mx-6">
-            <div className="flex items-center justify-between border-b-2 border-gray-50 pb-4 px-2">
-              <h2 className="text-3xl font-black text-gray-800">Select Learning Stage</h2>
-              <button 
-                onClick={() => setIsStageModalOpen(false)} 
-                className="w-10 h-10 rounded-full flex items-center justify-center text-2xl text-gray-400 hover:text-gray-600 font-bold hover:bg-gray-50 transition-all"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="max-h-[75vh] overflow-y-auto scrollbar-hide">
-              <StageSelector />
             </div>
           </div>
         </div>

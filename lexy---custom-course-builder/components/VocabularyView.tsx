@@ -1,20 +1,39 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ALPHABET } from '../constants';
-import { DictionaryEntry } from '../types';
+import { DictionaryEntry, AlphabetItem } from '../types';
 
 interface VocabularyViewProps {
+  alphabet?: AlphabetItem[];
   dictionary?: DictionaryEntry[];
   savedWordIds: string[];
   onToggleSave: (wordId: string) => void;
 }
 
-const VocabularyView: React.FC<VocabularyViewProps> = ({ dictionary = [], savedWordIds, onToggleSave }) => {
+const VocabularyView: React.FC<VocabularyViewProps> = ({ alphabet, dictionary = [], savedWordIds, onToggleSave }) => {
   const [activeTab, setActiveTab] = useState<'alphabet' | 'dictionary'>('alphabet');
   const [searchTerm, setSearchTerm] = useState("");
   
-  const vowels = ['A', 'E', 'I', 'O', 'U'];
-  const consonants = ALPHABET.filter(letter => !vowels.includes(letter));
+  // Dynamic Alphabet Logic
+  const displayAlphabet = useMemo(() => {
+    if (alphabet && alphabet.length > 0) {
+      return alphabet;
+    }
+    // Fallback to constants if no custom alphabet provided
+    return ALPHABET.map(char => ({ id: char, character: char } as AlphabetItem));
+  }, [alphabet]);
+
+  const vowels = ['A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u'];
+  
+  const sortedAlphabet = useMemo(() => {
+    const v: AlphabetItem[] = [];
+    const c: AlphabetItem[] = [];
+    displayAlphabet.forEach(item => {
+      if (vowels.includes(item.character)) v.push(item);
+      else c.push(item);
+    });
+    return { vowels: v, consonants: c };
+  }, [displayAlphabet]);
 
   const speak = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -64,16 +83,17 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ dictionary = [], savedW
     );
   };
 
-  const LetterButton: React.FC<{ letter: string; type: 'vowel' | 'consonant' }> = ({ letter, type }) => {
+  const LetterButton: React.FC<{ item: AlphabetItem; type: 'vowel' | 'consonant' }> = ({ item, type }) => {
     const activeColors = type === 'vowel' 
       ? 'hover:border-[#ffc800] hover:bg-[#fff9e6] group-hover:text-[#ffc800]' 
       : 'hover:border-[#ad46ff] hover:bg-purple-50 group-hover:text-[#ad46ff]';
     return (
       <button
-        onClick={() => speak(letter)}
+        onClick={() => speak(item.character)}
         className={`group duo-card p-5 flex flex-col items-center justify-center space-y-3 transition-all transform active:scale-95 ${activeColors}`}
       >
-        <span className="text-4xl font-black text-gray-800">{letter}</span>
+        <span className="text-4xl font-black text-gray-800">{item.character}</span>
+        {item.phonetic && <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.phonetic}</span>}
         <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-sm shadow-inner transition-colors">
           🔊
         </div>
@@ -112,20 +132,22 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ dictionary = [], savedW
 
       {activeTab === 'alphabet' && (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom duration-300">
-           <section className="space-y-6">
-            <h2 className="text-2xl font-black text-gray-700 uppercase tracking-widest flex items-center gap-3">
-              <span className="w-2 h-8 bg-yellow-400 rounded-full" /> Vowels
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
-              {vowels.map((letter) => <LetterButton key={letter} letter={letter} type="vowel" />)}
-            </div>
-          </section>
+           {sortedAlphabet.vowels.length > 0 && (
+             <section className="space-y-6">
+              <h2 className="text-2xl font-black text-gray-700 uppercase tracking-widest flex items-center gap-3">
+                <span className="w-2 h-8 bg-yellow-400 rounded-full" /> Vowels
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
+                {sortedAlphabet.vowels.map((item) => <LetterButton key={item.id} item={item} type="vowel" />)}
+              </div>
+            </section>
+           )}
           <section className="space-y-6">
             <h2 className="text-2xl font-black text-gray-700 uppercase tracking-widest flex items-center gap-3">
               <span className="w-2 h-8 bg-[#ad46ff] rounded-full" /> Consonants
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-              {consonants.map((letter) => <LetterButton key={letter} letter={letter} type="consonant" />)}
+              {sortedAlphabet.consonants.map((item) => <LetterButton key={item.id} item={item} type="consonant" />)}
             </div>
           </section>
         </div>
